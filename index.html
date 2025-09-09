@@ -75,9 +75,8 @@
         .date-input-section {
             display: flex;
             gap: 15px;
-            align-items: center;
+            align-items: flex-start;
             margin-bottom: 15px;
-            flex-wrap: wrap;
         }
         
         .date-range-display {
@@ -85,9 +84,12 @@
             border: 2px solid #e2e8f0;
             border-radius: 6px;
             padding: 10px 15px;
-            min-width: 200px;
+            min-width: 250px;
             font-weight: 500;
             color: #4a5568;
+            height: 40px;
+            display: flex;
+            align-items: center;
         }
         
         .main-section {
@@ -161,9 +163,27 @@
             position: relative;
         }
         
+        .post-entry.editing {
+            background: #f0f8ff !important;
+            border: 2px solid #667eea !important;
+        }
+        
+        .post-header {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr auto;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-weight: 600;
+            font-size: 12px;
+            color: #4a5568;
+            padding: 10px;
+            background: #e2e8f0;
+            border-radius: 6px;
+        }
+        
         .post-grid {
             display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr auto;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr auto;
             gap: 10px;
             align-items: center;
             margin-bottom: 10px;
@@ -496,11 +516,6 @@
             color: #744210;
         }
         
-        .editing {
-            background: #f0f8ff !important;
-            border: 2px solid #667eea !important;
-        }
-        
         .date-input-help {
             font-size: 0.8em;
             color: #718096;
@@ -517,7 +532,7 @@
                 flex-direction: column;
             }
             
-            .post-grid {
+            .post-grid, .post-header {
                 grid-template-columns: 1fr;
                 gap: 10px;
             }
@@ -577,17 +592,23 @@
             <div class="date-selector">
                 <h3>📅 Select Date Range</h3>
                 <div class="date-input-section">
-                    <div style="flex: 1; min-width: 200px;">
+                    <div style="flex: 1; min-width: 250px;">
                         <label><strong>Start Date:</strong></label>
-                        <input type="text" id="startDate" placeholder="2025-01-15, 01/15/2025, January 15, 2025" onchange="updateDateRange()">
-                        <div class="date-input-help">Enter date in any format: ISO (2025-01-15), US (01/15/2025), or natural (January 15, 2025)</div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="text" id="startDate" placeholder="2025-01-15, 01/15/2025, January 15, 2025" onchange="updateDateRange()" style="flex: 1;">
+                            <input type="date" id="startDatePicker" onchange="syncDateFromPicker('start')" style="width: 150px;">
+                        </div>
+                        <div class="date-input-help">Enter date in any format or use calendar picker</div>
                     </div>
-                    <div style="flex: 1; min-width: 200px;">
+                    <div style="flex: 1; min-width: 250px;">
                         <label><strong>End Date:</strong></label>
-                        <input type="text" id="endDate" placeholder="Leave blank for 7-day range" onchange="updateDateRange()">
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="text" id="endDate" placeholder="Leave blank for 7-day range" onchange="updateDateRange()" style="flex: 1;">
+                            <input type="date" id="endDatePicker" onchange="syncDateFromPicker('end')" style="width: 150px;">
+                        </div>
                         <div class="date-input-help">Leave blank for automatic 7-day range, or enter custom end date</div>
                     </div>
-                    <div style="flex: 1; min-width: 200px;">
+                    <div style="flex: 1; min-width: 250px;">
                         <label><strong>Selected Range:</strong></label>
                         <div class="date-range-display" id="dateRangeDisplay">Please select start date</div>
                     </div>
@@ -766,6 +787,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         // Make functions available globally
         window.signInWithGoogle = signInWithGoogle;
         window.signOut = signOut;
+        window.syncDateFromPicker = syncDateFromPicker;
         window.updateDateRange = updateDateRange;
         window.setThisWeek = setThisWeek;
         window.setLastWeek = setLastWeek;
@@ -831,6 +853,17 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 month: 'short', 
                 day: 'numeric' 
             });
+        }
+
+        // Date picker sync function
+        function syncDateFromPicker(type) {
+            const picker = document.getElementById(type + 'DatePicker');
+            const textInput = document.getElementById(type + 'Date');
+            
+            if (picker.value) {
+                textInput.value = picker.value;
+                updateDateRange();
+            }
         }
 
         // Initialize app
@@ -1005,6 +1038,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 endDate = new Date(startDate);
                 endDate.setDate(startDate.getDate() + 6);
                 document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+                document.getElementById('endDatePicker').value = endDate.toISOString().split('T')[0];
             }
             
             displayDiv.textContent = `${formatDateDisplay(startDate)} → ${formatDateDisplay(endDate)}`;
@@ -1023,8 +1057,13 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             const sunday = new Date(monday);
             sunday.setDate(monday.getDate() + 6); // Get Sunday
             
-            document.getElementById('startDate').value = monday.toISOString().split('T')[0];
-            document.getElementById('endDate').value = sunday.toISOString().split('T')[0];
+            const startDateStr = monday.toISOString().split('T')[0];
+            const endDateStr = sunday.toISOString().split('T')[0];
+            
+            document.getElementById('startDate').value = startDateStr;
+            document.getElementById('endDate').value = endDateStr;
+            document.getElementById('startDatePicker').value = startDateStr;
+            document.getElementById('endDatePicker').value = endDateStr;
             
             updateDateRange();
         }
@@ -1037,8 +1076,13 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             const lastSunday = new Date(lastMonday);
             lastSunday.setDate(lastMonday.getDate() + 6); // Get last Sunday
             
-            document.getElementById('startDate').value = lastMonday.toISOString().split('T')[0];
-            document.getElementById('endDate').value = lastSunday.toISOString().split('T')[0];
+            const startDateStr = lastMonday.toISOString().split('T')[0];
+            const endDateStr = lastSunday.toISOString().split('T')[0];
+            
+            document.getElementById('startDate').value = startDateStr;
+            document.getElementById('endDate').value = endDateStr;
+            document.getElementById('startDatePicker').value = startDateStr;
+            document.getElementById('endDatePicker').value = endDateStr;
             
             updateDateRange();
         }
@@ -1103,20 +1147,48 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             postCounter++;
             const container = document.getElementById(platform + '-posts');
             
+            // Add header if this is the first post
+            if (container.children.length === 0) {
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'post-header';
+                headerDiv.innerHTML = `
+                    <div>Description</div>
+                    <div>Type</div>
+                    <div>Views</div>
+                    <div>Likes</div>
+                    <div>Comments</div>
+                    <div>Shares</div>
+                    <div>Engagement</div>
+                    <div>Actions</div>
+                `;
+                container.appendChild(headerDiv);
+            }
+            
             const postDiv = document.createElement('div');
-            postDiv.className = 'post-entry';
+            postDiv.className = 'post-entry editing';
             postDiv.dataset.postId = postCounter;
             postDiv.innerHTML = `
                 <div class="post-grid">
-                    <input type="text" placeholder="Post description/type" class="post-description" onchange="calculateEngagement(this); saveData()">
-                    <input type="number" placeholder="Views" class="post-views" onchange="calculateEngagement(this); saveData()">
-                    <input type="number" placeholder="Likes" class="post-likes" onchange="calculateEngagement(this); saveData()">
-                    <input type="number" placeholder="Comments" class="post-comments" onchange="calculateEngagement(this); saveData()">
-                    <input type="number" placeholder="Shares" class="post-shares" onchange="calculateEngagement(this); saveData()">
+                    <input type="text" placeholder="Post description" class="post-description" onchange="calculateEngagement(this); saveData()">
+                    <select class="post-type" onchange="saveData()">
+                        <option value="">Select type...</option>
+                        <option value="Post">Post</option>
+                        <option value="Reel">Reel</option>
+                        <option value="Story">Story</option>
+                        <option value="Carousel">Carousel</option>
+                        <option value="Video">Video</option>
+                        <option value="Pin">Pin</option>
+                        <option value="Tweet">Tweet</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <input type="number" placeholder="0" class="post-views" onchange="calculateEngagement(this); saveData()">
+                    <input type="number" placeholder="0" class="post-likes" onchange="calculateEngagement(this); saveData()">
+                    <input type="number" placeholder="0" class="post-comments" onchange="calculateEngagement(this); saveData()">
+                    <input type="number" placeholder="0" class="post-shares" onchange="calculateEngagement(this); saveData()">
                     <div class="engagement-rate" id="rate-${postCounter}">0%</div>
                     <div class="post-actions">
-                        <button class="edit-btn" onclick="editPost('${platform}', ${postCounter})">Edit</button>
-                        <button class="remove-btn" onclick="removePost(this)">Remove</button>
+                        <button class="save-btn" onclick="savePost('${platform}', ${postCounter})">Save</button>
+                        <button class="cancel-btn" onclick="removePost(this)">Cancel</button>
                     </div>
                 </div>
                 <div style="margin-top: 10px;">
@@ -1127,13 +1199,6 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             
             container.appendChild(postDiv);
             updatePlatformSummary(platform);
-            
-            // Auto-save when adding new post
-            if (currentUser && !initializationError) {
-                saveData().then(() => {
-                    console.log('Manual post saved successfully');
-                });
-            }
         }
 
         function editPost(platform, postId) {
@@ -1173,7 +1238,9 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             
             // Save data after editing
             if (currentUser && !initializationError) {
-                saveData();
+                saveData().then(() => {
+                    console.log('Manual post saved successfully');
+                });
             }
         }
 
@@ -1209,6 +1276,15 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             }
             
             postEntry.remove();
+            
+            // Remove header if no posts left
+            const container = document.getElementById(platform + '-posts');
+            const remainingPosts = container.querySelectorAll('.post-entry');
+            if (remainingPosts.length === 0) {
+                const header = container.querySelector('.post-header');
+                if (header) header.remove();
+            }
+            
             updatePlatformSummary(platform);
             
             // Save data after removing post
@@ -1450,6 +1526,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 postData.push({
                     id: post.dataset.postId,
                     description: post.querySelector('.post-description')?.value || '',
+                    type: post.querySelector('.post-type')?.value || '',
                     views: parseInt(post.querySelector('.post-views')?.value) || 0,
                     likes: parseInt(post.querySelector('.post-likes')?.value) || 0,
                     comments: parseInt(post.querySelector('.post-comments')?.value) || 0,
@@ -1467,11 +1544,20 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             
             document.getElementById('startDate').value = rangeData.startDate || '';
             document.getElementById('endDate').value = rangeData.endDate || '';
+            
+            // Sync date pickers
+            if (rangeData.startDate) {
+                document.getElementById('startDatePicker').value = rangeData.startDate;
+            }
+            if (rangeData.endDate) {
+                document.getElementById('endDatePicker').value = rangeData.endDate;
+            }
+            
             updateDateRange();
 
             const platforms = ['instagram', 'facebook', 'threads', 'tiktok', 'pinterest'];
             
-            // Clear existing posts first
+            // Clear existing posts but preserve structure
             platforms.forEach(platform => {
                 const container = document.getElementById(platform + '-posts');
                 if (container) {
@@ -1483,32 +1569,64 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             postCounter = 0;
             
             platforms.forEach(platform => {
-                if (rangeData.platforms?.[platform]?.posts) {
+                if (rangeData.platforms?.[platform]?.posts && rangeData.platforms[platform].posts.length > 0) {
                     const container = document.getElementById(platform + '-posts');
                     if (container) {
+                        // Add header first
+                        const headerDiv = document.createElement('div');
+                        headerDiv.className = 'post-header';
+                        headerDiv.innerHTML = `
+                            <div>Description</div>
+                            <div>Type</div>
+                            <div>Views</div>
+                            <div>Likes</div>
+                            <div>Comments</div>
+                            <div>Shares</div>
+                            <div>Engagement</div>
+                            <div>Actions</div>
+                        `;
+                        container.appendChild(headerDiv);
+                        
                         rangeData.platforms[platform].posts.forEach(postData => {
                             // Use stored ID if available, otherwise increment counter
                             if (postData.id) {
                                 postCounter = Math.max(postCounter, parseInt(postData.id));
                             }
                             
-                            addPost(platform);
-                            const lastPost = container.lastElementChild;
-                            if (lastPost) {
-                                lastPost.querySelector('.post-description').value = postData.description || '';
-                                lastPost.querySelector('.post-views').value = postData.views || '';
-                                lastPost.querySelector('.post-likes').value = postData.likes || '';
-                                lastPost.querySelector('.post-comments').value = postData.comments || '';
-                                lastPost.querySelector('.post-shares').value = postData.shares || '';
-                                lastPost.querySelector('.post-notes').value = postData.notes || '';
-                                
-                                // Restore the original post ID if it exists
-                                if (postData.id) {
-                                    lastPost.dataset.postId = postData.id;
-                                }
-                                
-                                calculateEngagement(lastPost.querySelector('.post-views'));
-                            }
+                            const postDiv = document.createElement('div');
+                            postDiv.className = 'post-entry';
+                            postDiv.dataset.postId = postData.id || postCounter;
+                            postDiv.innerHTML = `
+                                <div class="post-grid">
+                                    <input type="text" placeholder="Post description" class="post-description" value="${postData.description || ''}" onchange="calculateEngagement(this); saveData()">
+                                    <select class="post-type" onchange="saveData()">
+                                        <option value="">Select type...</option>
+                                        <option value="Post" ${postData.type === 'Post' ? 'selected' : ''}>Post</option>
+                                        <option value="Reel" ${postData.type === 'Reel' ? 'selected' : ''}>Reel</option>
+                                        <option value="Story" ${postData.type === 'Story' ? 'selected' : ''}>Story</option>
+                                        <option value="Carousel" ${postData.type === 'Carousel' ? 'selected' : ''}>Carousel</option>
+                                        <option value="Video" ${postData.type === 'Video' ? 'selected' : ''}>Video</option>
+                                        <option value="Pin" ${postData.type === 'Pin' ? 'selected' : ''}>Pin</option>
+                                        <option value="Tweet" ${postData.type === 'Tweet' ? 'selected' : ''}>Tweet</option>
+                                        <option value="Other" ${postData.type === 'Other' ? 'selected' : ''}>Other</option>
+                                    </select>
+                                    <input type="number" placeholder="0" class="post-views" value="${postData.views || ''}" onchange="calculateEngagement(this); saveData()">
+                                    <input type="number" placeholder="0" class="post-likes" value="${postData.likes || ''}" onchange="calculateEngagement(this); saveData()">
+                                    <input type="number" placeholder="0" class="post-comments" value="${postData.comments || ''}" onchange="calculateEngagement(this); saveData()">
+                                    <input type="number" placeholder="0" class="post-shares" value="${postData.shares || ''}" onchange="calculateEngagement(this); saveData()">
+                                    <div class="engagement-rate">0%</div>
+                                    <div class="post-actions">
+                                        <button class="edit-btn" onclick="editPost('${platform}', ${postData.id || postCounter})">Edit</button>
+                                        <button class="remove-btn" onclick="removePost(this)">Remove</button>
+                                    </div>
+                                </div>
+                                <div style="margin-top: 10px;">
+                                    <label style="font-size: 12px; color: #718096;">Notes:</label>
+                                    <input type="text" placeholder="Additional notes about this post" class="post-notes" value="${postData.notes || ''}" style="margin-top: 5px;" onchange="saveData()">
+                                </div>
+                            `;
+                            container.appendChild(postDiv);
+                            calculateEngagement(postDiv.querySelector('.post-views'));
                         });
                         updatePlatformSummary(platform);
                     }
@@ -1740,6 +1858,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 document.getElementById('apiKeyStatus').classList.remove('hidden');
                 document.getElementById('uploadSection').classList.remove('hidden');
                 document.getElementById('clearApiKeyBtn').disabled = false;
+                document.getElementById('saveApiKeyBtn').disabled = true;
                 
                 const apiKeyInput = document.getElementById('openaiApiKey');
                 apiKeyInput.placeholder = 'API Key saved ✅';
@@ -1748,6 +1867,8 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             } else {
                 document.getElementById('apiKeyStatus').classList.add('hidden');
                 document.getElementById('uploadSection').classList.add('hidden');
+                document.getElementById('saveApiKeyBtn').disabled = true;
+                document.getElementById('clearApiKeyBtn').disabled = true;
             }
         }
 
@@ -1971,7 +2092,7 @@ Look carefully for any numbers related to engagement metrics. Sometimes they may
                 switchEntryMethod('dashboard');
             }
             
-            // Add post to the selected platform
+            // Add post to the selected platform (this creates it in editing mode)
             addPost(platform);
             
             // Get the last added post and populate it
@@ -1979,7 +2100,37 @@ Look carefully for any numbers related to engagement metrics. Sometimes they may
             const lastPost = container.lastElementChild;
             
             if (lastPost && extractedData) {
-                lastPost.querySelector('.post-description').value = extractedData.description || extractedData.postType || 'AI extracted post';
+                lastPost.querySelector('.post-description').value = extractedData.description || 'AI extracted post';
+                
+                // Set the post type if available
+                const typeSelect = lastPost.querySelector('.post-type');
+                if (extractedData.postType && typeSelect) {
+                    // Map common types to our dropdown options
+                    const typeMap = {
+                        'reel': 'Reel',
+                        'post': 'Post', 
+                        'story': 'Story',
+                        'carousel': 'Carousel',
+                        'video': 'Video',
+                        'pin': 'Pin',
+                        'tweet': 'Tweet'
+                    };
+                    const mappedType = typeMap[extractedData.postType.toLowerCase()] || extractedData.postType;
+                    
+                    // Find matching option
+                    for (let option of typeSelect.options) {
+                        if (option.value.toLowerCase() === mappedType.toLowerCase()) {
+                            option.selected = true;
+                            break;
+                        }
+                    }
+                    
+                    // If no match found, use "Other"
+                    if (typeSelect.value === '') {
+                        typeSelect.value = 'Other';
+                    }
+                }
+                
                 lastPost.querySelector('.post-views').value = extractedData.views || '';
                 lastPost.querySelector('.post-likes').value = extractedData.likes || '';
                 lastPost.querySelector('.post-comments').value = extractedData.comments || '';
