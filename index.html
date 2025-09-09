@@ -246,20 +246,6 @@
             margin-top: 20px;
         }
         
-        .file-drop-zone {
-            border: 2px dashed #cbd5e0;
-            border-radius: 8px;
-            padding: 40px;
-            text-align: center;
-            cursor: pointer;
-            transition: border-color 0.3s;
-        }
-        
-        .file-drop-zone:hover {
-            border-color: #667eea;
-            background: #f7fafc;
-        }
-        
         .hidden {
             display: none;
         }
@@ -277,85 +263,6 @@
             min-height: 150px;
             font-family: monospace;
             font-size: 12px;
-        }
-        
-        .analysis-result {
-            background: #f7fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-        }
-        
-        .analysis-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        
-        .screenshot-preview {
-            max-width: 200px;
-            max-height: 150px;
-            border-radius: 6px;
-            object-fit: cover;
-        }
-        
-        .extracted-data-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 10px;
-            margin: 10px 0;
-        }
-        
-        .data-field {
-            background: white;
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid #e2e8f0;
-            text-align: center;
-        }
-        
-        .data-label {
-            font-size: 0.8em;
-            color: #718096;
-            margin-bottom: 4px;
-        }
-        
-        .data-value {
-            font-weight: bold;
-            color: #2d3748;
-        }
-        
-        .loading-spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .error-message {
-            background: #fed7d7;
-            color: #742a2a;
-            padding: 10px;
-            border-radius: 6px;
-            margin: 10px 0;
-        }
-        
-        .success-message {
-            background: #c6f6d5;
-            color: #22543d;
-            padding: 10px;
-            border-radius: 6px;
-            margin: 10px 0;
         }
         
         .loading {
@@ -426,7 +333,6 @@
             <div class="input-method-tabs">
                 <button class="tab-button active" onclick="switchTab('manual')">Manual Entry</button>
                 <button class="tab-button" onclick="switchTab('bulk')">Bulk CSV Import</button>
-                <button class="tab-button" onclick="switchTab('screenshot')">🤖 AI Screenshot Analysis</button>
             </div>
             
             <!-- Manual Entry Tab -->
@@ -443,11 +349,11 @@
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
                             <div>
                                 <label>Posts This Week:</label>
-                                <input type="number" id="ig-total-posts" onchange="updateInstagramSummary()">
+                                <input type="number" id="ig-total-posts" onchange="saveData()">
                             </div>
                             <div>
                                 <label>Reels Archived (under 2%):</label>
-                                <input type="number" id="ig-archived-reels" onchange="updateInstagramSummary()">
+                                <input type="number" id="ig-archived-reels" onchange="saveData()">
                             </div>
                         </div>
                         
@@ -461,9 +367,102 @@
                     </div>
                 </div>
                 
-                <!-- Other platform sections would be here (Facebook, Threads, TikTok, Pinterest) -->
-                <!-- I'll add them if you want, but keeping this shorter for now -->
+                <!-- Facebook Section -->
+                <div class="platform-section">
+                    <div class="platform-header" onclick="togglePlatform('facebook')">
+                        <span>📘 Facebook</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div id="facebook-content" class="platform-content hidden">
+                        <div id="facebook-posts"></div>
+                        <button onclick="addPost('facebook')">+ Add Facebook Post</button>
+                        
+                        <div style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px;">
+                            <h4>Facebook Summary</h4>
+                            <div id="facebook-summary">Add posts to see summary</div>
+                        </div>
+                    </div>
+                </div>
                 
+                <!-- Threads Section -->
+                <div class="platform-section">
+                    <div class="platform-header" onclick="togglePlatform('threads')">
+                        <span>🧵 Threads</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div id="threads-content" class="platform-content hidden">
+                        <div style="margin-bottom: 20px;">
+                            <label>Total Posts This Week:</label>
+                            <input type="number" id="threads-total-posts" onchange="saveData()">
+                        </div>
+                        
+                        <div id="threads-posts"></div>
+                        <button onclick="addPost('threads')">+ Add Threads Post</button>
+                        
+                        <div style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px;">
+                            <h4>Threads Summary</h4>
+                            <div id="threads-summary">Add posts to see summary</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- TikTok Section -->
+                <div class="platform-section">
+                    <div class="platform-header" onclick="togglePlatform('tiktok')">
+                        <span>🎵 TikTok</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div id="tiktok-content" class="platform-content hidden">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                            <div>
+                                <label>Status:</label>
+                                <select id="tiktok-status" onchange="saveData()">
+                                    <option value="active">Active Posting</option>
+                                    <option value="testing">Testing Phase</option>
+                                    <option value="paused">Paused</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Days of Optimization Completed:</label>
+                                <input type="text" id="tiktok-optimization" placeholder="e.g., 5/5" onchange="saveData()">
+                            </div>
+                        </div>
+                        
+                        <div id="tiktok-posts"></div>
+                        <button onclick="addPost('tiktok')">+ Add TikTok Post</button>
+                        
+                        <div style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px;">
+                            <h4>TikTok Summary</h4>
+                            <div id="tiktok-summary">Add posts to see summary</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Pinterest Section -->
+                <div class="platform-section">
+                    <div class="platform-header" onclick="togglePlatform('pinterest')">
+                        <span>📌 Pinterest</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div id="pinterest-content" class="platform-content hidden">
+                        <div style="margin-bottom: 20px;">
+                            <label>Status:</label>
+                            <select id="pinterest-status" onchange="saveData()">
+                                <option value="active">Active</option>
+                                <option value="migration">Blog Migration in Progress</option>
+                                <option value="paused">Not Yet Active</option>
+                            </select>
+                        </div>
+                        
+                        <div id="pinterest-posts"></div>
+                        <button onclick="addPost('pinterest')">+ Add Pinterest Pin</button>
+                        
+                        <div style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px;">
+                            <h4>Pinterest Summary</h4>
+                            <div id="pinterest-summary">Add pins to see summary</div>
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <!-- Bulk Import Tab -->
@@ -474,22 +473,6 @@
 Instagram,Reel,1250,89,12,5,8.48%
 Facebook,Post,456,23,8,2,7.24%"></textarea>
                 <button onclick="processBulkData()">Process Bulk Data</button>
-            </div>
-            
-            <!-- AI Screenshot Analysis Tab -->
-            <div id="screenshotTab" class="input-section hidden">
-                <h2>🤖 AI Screenshot Analysis</h2>
-                <p>Upload screenshots of your social media analytics and AI will automatically extract the data!</p>
-                
-                <div class="file-drop-zone" onclick="document.getElementById('screenshotInput').click()">
-                    <p>📱 Click to upload screenshots</p>
-                    <p style="font-size: 0.9em; color: #718096;">Supports: Instagram, TikTok, Facebook, Threads analytics screenshots</p>
-                    <p style="font-size: 0.8em; color: #a0aec0;">PNG, JPG, JPEG formats</p>
-                </div>
-                <input type="file" id="screenshotInput" accept="image/*" multiple style="display: none;" onchange="analyzeScreenshots(event)">
-                
-                <div id="analysisResults" style="margin-top: 20px;"></div>
-                <div id="extractedData" style="margin-top: 20px;"></div>
             </div>
             
             <div class="loading" id="loadingIndicator">Loading your data...</div>
@@ -508,6 +491,32 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                     </div>
                 </div>
             </div>
+            
+            <!-- Time Investment -->
+            <div class="summary-section">
+                <h2>⏱️ Time Investment Analysis</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div>
+                        <label>Content Creation (hours):</label>
+                        <input type="number" id="time-creation" step="0.5" onchange="updateTimeAnalysis(); saveData()">
+                    </div>
+                    <div>
+                        <label>Platform Management (hours):</label>
+                        <input type="number" id="time-management" step="0.5" onchange="updateTimeAnalysis(); saveData()">
+                    </div>
+                    <div>
+                        <label>Engagement/Responses (hours):</label>
+                        <input type="number" id="time-engagement" step="0.5" onchange="updateTimeAnalysis(); saveData()">
+                    </div>
+                    <div>
+                        <label>Analytics Review (hours):</label>
+                        <input type="number" id="time-analytics" step="0.5" onchange="updateTimeAnalysis(); saveData()">
+                    </div>
+                </div>
+                <div id="timeAnalysis" style="margin-top: 15px; padding: 15px; background: #f7fafc; border-radius: 8px;">
+                    Enter time data to see analysis
+                </div>
+            </div>
         </div>
     </div>
 
@@ -515,16 +524,17 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-        import { getFirestore, doc, setDoc, collection, getDocs, deleteDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-        // 🔥 REPLACE THIS WITH YOUR FIREBASE CONFIG
+        // Firebase Configuration
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY_HERE",
-            authDomain: "your-project.firebaseapp.com",
-            projectId: "your-project-id",
-            storageBucket: "your-project.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "your-app-id"
+            apiKey: "AIzaSyA0CipMJUlrp0tFKSE4T-c5a-4yBJpE8xs",
+            authDomain: "social-media-dashboard-mc.firebaseapp.com",
+            projectId: "social-media-dashboard-mc",
+            storageBucket: "social-media-dashboard-mc.firebasestorage.app",
+            messagingSenderId: "504137402125",
+            appId: "1:504137402125:web:1e00590b5f278ff14a5244",
+            measurementId: "G-WFQQNGW21G"
         };
 
         // Initialize Firebase
@@ -534,25 +544,10 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
 
         // Global variables
         let currentUser = null;
-        let analyticsData = {
-            weeks: {},
-            currentWeek: null
-        };
-
-        // Make functions globally available
-        window.signInWithGoogle = signInWithGoogle;
-        window.signOut = signOut;
-        window.addPost = addPost;
-        window.switchTab = switchTab;
-        window.togglePlatform = togglePlatform;
-        window.updateWeekEnd = updateWeekEnd;
-        window.generateReport = generateReport;
-        window.exportData = exportData;
-        window.analyzeScreenshots = analyzeScreenshots;
+        let postCounter = 0;
 
         // Initialize app
         window.onload = function() {
-            // Set current week
             const today = new Date();
             const monday = new Date(today);
             monday.setDate(today.getDate() - today.getDay() + 1);
@@ -602,7 +597,6 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             document.getElementById('userSection').classList.remove('hidden');
             document.getElementById('appContent').classList.remove('hidden');
             
-            // Update user info
             document.getElementById('userName').textContent = currentUser.displayName;
             document.getElementById('userEmail').textContent = currentUser.email;
             document.getElementById('userAvatar').src = currentUser.photoURL;
@@ -616,19 +610,13 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             loadingIndicator.style.display = 'block';
 
             try {
-                const currentWeekKey = getCurrentWeekKey();
-                const docRef = doc(db, 'users', currentUser.uid, 'weeks', currentWeekKey);
+                const weekKey = document.getElementById('weekStart').value;
+                const docRef = doc(db, 'users', currentUser.uid, 'weeks', weekKey);
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {
                     const weekData = docSnap.data();
-                    analyticsData.weeks[currentWeekKey] = weekData;
-                    analyticsData.currentWeek = currentWeekKey;
                     populateFormWithData(weekData);
-                } else {
-                    // Initialize empty week data
-                    analyticsData.weeks[currentWeekKey] = createEmptyWeekData();
-                    analyticsData.currentWeek = currentWeekKey;
                 }
 
                 loadingIndicator.style.display = 'none';
@@ -639,60 +627,24 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             }
         }
 
-        async function saveCurrentWeekData() {
-            if (!currentUser || !analyticsData.currentWeek) return;
+        async function saveData() {
+            if (!currentUser) return;
 
             try {
                 const weekData = collectCurrentWeekData();
-                const docRef = doc(db, 'users', currentUser.uid, 'weeks', analyticsData.currentWeek);
+                const weekKey = document.getElementById('weekStart').value;
+                const docRef = doc(db, 'users', currentUser.uid, 'weeks', weekKey);
                 await setDoc(docRef, weekData);
-                
-                analyticsData.weeks[analyticsData.currentWeek] = weekData;
             } catch (error) {
                 console.error('Error saving data:', error);
-                alert('Failed to save data. Please try again.');
             }
         }
 
-        function getCurrentWeekKey() {
-            const weekStart = document.getElementById('weekStart').value;
-            return weekStart; // Use the start date as the key
-        }
-
-        function createEmptyWeekData() {
-            return {
-                weekStart: document.getElementById('weekStart').value,
-                weekEnd: document.getElementById('weekEnd').value,
-                platforms: {
-                    instagram: { posts: [], totalPosts: 0, archivedReels: 0 },
-                    facebook: { posts: [] },
-                    threads: { posts: [], totalPosts: 0 },
-                    tiktok: { posts: [], status: 'active', optimization: '' },
-                    pinterest: { posts: [], status: 'migration' }
-                },
-                timeInvestment: {
-                    creation: 0,
-                    management: 0,
-                    engagement: 0,
-                    analytics: 0
-                },
-                lastUpdated: new Date().toISOString()
-            };
-        }
-
         function collectCurrentWeekData() {
-            // Collect all current form data
             const weekData = {
                 weekStart: document.getElementById('weekStart').value,
                 weekEnd: document.getElementById('weekEnd').value,
-                platforms: {
-                    instagram: { 
-                        posts: collectPostsFromPlatform('instagram'),
-                        totalPosts: parseInt(document.getElementById('ig-total-posts')?.value) || 0,
-                        archivedReels: parseInt(document.getElementById('ig-archived-reels')?.value) || 0
-                    }
-                    // Add other platforms as needed
-                },
+                platforms: {},
                 timeInvestment: {
                     creation: parseFloat(document.getElementById('time-creation')?.value) || 0,
                     management: parseFloat(document.getElementById('time-management')?.value) || 0,
@@ -701,6 +653,13 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 },
                 lastUpdated: new Date().toISOString()
             };
+
+            const platforms = ['instagram', 'facebook', 'threads', 'tiktok', 'pinterest'];
+            platforms.forEach(platform => {
+                weekData.platforms[platform] = {
+                    posts: collectPostsFromPlatform(platform)
+                };
+            });
 
             return weekData;
         }
@@ -727,42 +686,33 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         }
 
         function populateFormWithData(weekData) {
-            // Populate week dates
             document.getElementById('weekStart').value = weekData.weekStart || '';
             document.getElementById('weekEnd').value = weekData.weekEnd || '';
 
-            // Populate Instagram data
-            if (weekData.platforms?.instagram) {
-                const igData = weekData.platforms.instagram;
-                
-                if (document.getElementById('ig-total-posts')) {
-                    document.getElementById('ig-total-posts').value = igData.totalPosts || 0;
+            const platforms = ['instagram', 'facebook', 'threads', 'tiktok', 'pinterest'];
+            
+            platforms.forEach(platform => {
+                if (weekData.platforms?.[platform]?.posts) {
+                    const container = document.getElementById(platform + '-posts');
+                    if (container) {
+                        container.innerHTML = '';
+                        weekData.platforms[platform].posts.forEach(postData => {
+                            addPost(platform);
+                            const lastPost = container.lastElementChild;
+                            if (lastPost) {
+                                lastPost.querySelector('.post-description').value = postData.description || '';
+                                lastPost.querySelector('.post-views').value = postData.views || '';
+                                lastPost.querySelector('.post-likes').value = postData.likes || '';
+                                lastPost.querySelector('.post-comments').value = postData.comments || '';
+                                lastPost.querySelector('.post-shares').value = postData.shares || '';
+                                lastPost.querySelector('.post-notes').value = postData.notes || '';
+                                calculateEngagement(lastPost.querySelector('.post-views'));
+                            }
+                        });
+                    }
                 }
-                if (document.getElementById('ig-archived-reels')) {
-                    document.getElementById('ig-archived-reels').value = igData.archivedReels || 0;
-                }
+            });
 
-                // Populate posts
-                const container = document.getElementById('instagram-posts');
-                if (container && igData.posts) {
-                    container.innerHTML = '';
-                    igData.posts.forEach(postData => {
-                        addPost('instagram');
-                        const lastPost = container.lastElementChild;
-                        if (lastPost) {
-                            lastPost.querySelector('.post-description').value = postData.description || '';
-                            lastPost.querySelector('.post-views').value = postData.views || '';
-                            lastPost.querySelector('.post-likes').value = postData.likes || '';
-                            lastPost.querySelector('.post-comments').value = postData.comments || '';
-                            lastPost.querySelector('.post-shares').value = postData.shares || '';
-                            lastPost.querySelector('.post-notes').value = postData.notes || '';
-                            calculateEngagement(lastPost.querySelector('.post-views'));
-                        }
-                    });
-                }
-            }
-
-            // Populate time investment
             if (weekData.timeInvestment) {
                 const timeData = weekData.timeInvestment;
                 if (document.getElementById('time-creation')) {
@@ -777,6 +727,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 if (document.getElementById('time-analytics')) {
                     document.getElementById('time-analytics').value = timeData.analytics || 0;
                 }
+                updateTimeAnalysis();
             }
         }
 
@@ -787,22 +738,17 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             endDate.setDate(startDate.getDate() + 6);
             document.getElementById('weekEnd').value = endDate.toISOString().split('T')[0];
             
-            // Load data for new week
             if (currentUser) {
                 loadUserData();
             }
         }
 
         function switchTab(tabName) {
-            // Hide all tabs
             document.getElementById('manualTab').classList.add('hidden');
             document.getElementById('bulkTab').classList.add('hidden');
-            document.getElementById('screenshotTab').classList.add('hidden');
             
-            // Remove active class from all buttons
             document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
             
-            // Show selected tab and activate button
             document.getElementById(tabName + 'Tab').classList.remove('hidden');
             event.target.classList.add('active');
         }
@@ -815,8 +761,6 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             header.classList.toggle('collapsed');
         }
 
-        let postCounter = 0;
-
         function addPost(platform) {
             postCounter++;
             const container = document.getElementById(platform + '-posts');
@@ -825,34 +769,34 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             postDiv.className = 'post-entry';
             postDiv.innerHTML = `
                 <div class="post-grid">
-                    <input type="text" placeholder="Post description/type" class="post-description" onchange="saveCurrentWeekData()">
-                    <input type="number" placeholder="Views" class="post-views" onchange="calculateEngagement(this); saveCurrentWeekData()">
-                    <input type="number" placeholder="Likes" class="post-likes" onchange="calculateEngagement(this); saveCurrentWeekData()">
-                    <input type="number" placeholder="Comments" class="post-comments" onchange="calculateEngagement(this); saveCurrentWeekData()">
-                    <input type="number" placeholder="Shares" class="post-shares" onchange="calculateEngagement(this); saveCurrentWeekData()">
+                    <input type="text" placeholder="Post description/type" class="post-description" onchange="saveData()">
+                    <input type="number" placeholder="Views" class="post-views" onchange="calculateEngagement(this); saveData()">
+                    <input type="number" placeholder="Likes" class="post-likes" onchange="calculateEngagement(this); saveData()">
+                    <input type="number" placeholder="Comments" class="post-comments" onchange="calculateEngagement(this); saveData()">
+                    <input type="number" placeholder="Shares" class="post-shares" onchange="calculateEngagement(this); saveData()">
                     <div class="engagement-rate" id="rate-${postCounter}">0%</div>
                     <button onclick="removePost(this)" style="background: #e53e3e; padding: 5px 10px;">Remove</button>
                 </div>
                 <div style="margin-top: 10px;">
                     <label style="font-size: 12px; color: #718096;">Notes:</label>
-                    <input type="text" placeholder="Additional notes about this post" class="post-notes" style="margin-top: 5px;" onchange="saveCurrentWeekData()">
+                    <input type="text" placeholder="Additional notes about this post" class="post-notes" style="margin-top: 5px;" onchange="saveData()">
                 </div>
             `;
             
             container.appendChild(postDiv);
             updatePlatformSummary(platform);
-            saveCurrentWeekData();
+            saveData();
         }
 
-        window.removePost = function(button) {
+        function removePost(button) {
             const postEntry = button.closest('.post-entry');
             const platform = button.closest('.platform-section').querySelector('.platform-header span').textContent.split(' ')[1].toLowerCase();
             postEntry.remove();
             updatePlatformSummary(platform);
-            saveCurrentWeekData();
+            saveData();
         }
 
-        window.calculateEngagement = function(element) {
+        function calculateEngagement(element) {
             const postEntry = element.closest('.post-entry');
             const views = parseFloat(postEntry.querySelector('.post-views').value) || 0;
             const likes = parseFloat(postEntry.querySelector('.post-likes').value) || 0;
@@ -866,7 +810,6 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 const rateElement = postEntry.querySelector('.engagement-rate');
                 rateElement.textContent = engagementRate.toFixed(2) + '%';
                 
-                // Color coding
                 rateElement.className = 'engagement-rate ';
                 if (engagementRate >= 6) {
                     rateElement.className += 'rate-excellent';
@@ -879,22 +822,8 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 }
             }
             
-            updatePlatformSummary(element.closest('.platform-section').querySelector('.platform-header span').textContent.split(' ')[1].toLowerCase());
-        }
-
-        function updatePlatformSummary(platform) {
-            // Implementation for updating platform summaries
-            // This would be similar to your original code
-        }
-
-        window.updateInstagramSummary = function() {
-            updatePlatformSummary('instagram');
-            saveCurrentWeekData();
-        }
-
-        window.updateThreadsSummary = function() {
-            updatePlatformSummary('threads');
-            saveCurrentWeekData();
+            const platform = element.closest('.platform-section').querySelector('.platform-header span').textContent.split(' ')[1].toLowerCase();
+            updatePlatformSummary(platform);
         }
 
         function updatePlatformSummary(platform) {
@@ -903,7 +832,6 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             
             let totalPosts = posts.length;
             let totalViews = 0;
-            let totalEngagement = 0;
             let engagementRates = [];
             let bestPost = { rate: 0, description: '' };
             let worstPost = { rate: 100, description: '' };
@@ -916,7 +844,6 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 const description = post.querySelector('.post-description').value || 'Untitled post';
                 
                 totalViews += views;
-                totalEngagement += likes + comments + shares;
                 
                 if (views > 0) {
                     const rate = ((likes + comments + shares) / views) * 100;
@@ -954,18 +881,16 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 summaryElement.innerHTML = summaryHTML;
             }
             
-            // Update overall summary
             updateOverallSummary();
         }
 
         function updateOverallSummary() {
             const summaryGrid = document.getElementById('summaryGrid');
             
-            // Calculate overall metrics
             let totalPosts = 0;
             let totalViews = 0;
             let allEngagementRates = [];
-            let platforms = ['instagram', 'facebook', 'threads', 'tiktok', 'pinterest'];
+            const platforms = ['instagram', 'facebook', 'threads', 'tiktok', 'pinterest'];
             
             platforms.forEach(platform => {
                 const container = document.getElementById(platform + '-posts');
@@ -994,7 +919,6 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 : 0;
             
             const bestRate = allEngagementRates.length > 0 ? Math.max(...allEngagementRates) : 0;
-            const worstRate = allEngagementRates.length > 0 ? Math.min(...allEngagementRates) : 0;
             
             summaryGrid.innerHTML = `
                 <div class="summary-card">
@@ -1042,6 +966,92 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             
             document.getElementById('timeAnalysis').innerHTML = analysis;
         }
+
+        function generateReport() {
+            const weekData = collectCurrentWeekData();
+            const reportText = generateReportText(weekData);
+            const blob = new Blob([reportText], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `social-media-report-${weekData.weekStart}.txt`;
+            link.click();
+            
+            alert('Report generated and downloaded!');
+        }
+
+        function generateReportText(weekData) {
+            const platforms = ['instagram', 'facebook', 'threads', 'tiktok', 'pinterest'];
+            let report = `**Week of: ${weekData.weekStart} - ${weekData.weekEnd}**\n\n`;
+            report += `---\n\n## 📊 Platform Performance Overview\n\n`;
+            
+            platforms.forEach(platform => {
+                const platformData = weekData.platforms[platform];
+                if (platformData && platformData.posts && platformData.posts.length > 0) {
+                    report += `### ${platform.charAt(0).toUpperCase() + platform.slice(1)}\n\n`;
+                    report += `**Posts This Week**: ${platformData.posts.length}\n\n`;
+                    
+                    let rates = [];
+                    
+                    platformData.posts.forEach((post, index) => {
+                        const description = post.description || `Post ${index + 1}`;
+                        const views = post.views || 0;
+                        const likes = post.likes || 0;
+                        const comments = post.comments || 0;
+                        const shares = post.shares || 0;
+                        
+                        if (views > 0) {
+                            const rate = ((likes + comments + shares) / views) * 100;
+                            rates.push(rate);
+                            report += `- ${description}: ${views} views, ${rate.toFixed(2)}% engagement\n`;
+                            if (post.notes) report += `  *${post.notes}*\n`;
+                        }
+                    });
+                    
+                    if (rates.length > 0) {
+                        const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+                        const bestRate = Math.max(...rates);
+                        
+                        report += `\n**Performance Highlights**:\n`;
+                        report += `- Average engagement rate: ${avgRate.toFixed(2)}%\n`;
+                        report += `- Best performing post: ${bestRate.toFixed(2)}% engagement\n`;
+                    }
+                    
+                    report += `\n`;
+                }
+            });
+            
+            return report;
+        }
+
+        function exportData() {
+            const weekData = collectCurrentWeekData();
+            const dataStr = JSON.stringify(weekData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `social-media-data-${weekData.weekStart}.json`;
+            link.click();
+        }
+
+        function processBulkData() {
+            alert('Bulk CSV import feature - implementation available in full version');
+        }
+
+        // Make functions globally available
+        window.signInWithGoogle = signInWithGoogle;
+        window.signOut = signOut;
+        window.updateWeekEnd = updateWeekEnd;
+        window.switchTab = switchTab;
+        window.togglePlatform = togglePlatform;
+        window.addPost = addPost;
+        window.removePost = removePost;
+        window.calculateEngagement = calculateEngagement;
+        window.updateTimeAnalysis = updateTimeAnalysis;
+        window.generateReport = generateReport;
+        window.exportData = exportData;
+        window.processBulkData = processBulkData;
+        window.saveData = saveData;
 
     </script>
 </body>
