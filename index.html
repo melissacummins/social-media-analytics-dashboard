@@ -65,44 +65,68 @@
             border-radius: 50%;
         }
         
-        .week-selector {
+        .date-selector {
             background: #f8f9fa;
             padding: 20px;
             border-radius: 10px;
             margin-bottom: 30px;
+        }
+        
+        .date-input-section {
             display: flex;
             gap: 15px;
             align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
         }
         
-        .input-method-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        
-        .tab-button {
-            padding: 10px 20px;
-            border: none;
+        .date-range-display {
+            background: white;
+            border: 2px solid #e2e8f0;
             border-radius: 6px;
-            cursor: pointer;
-            background: #e2e8f0;
+            padding: 10px 15px;
+            min-width: 200px;
+            font-weight: 500;
             color: #4a5568;
-            font-weight: 600;
-            transition: background 0.3s;
         }
         
-        .tab-button.active {
-            background: #667eea;
-            color: white;
-        }
-        
-        .input-section {
+        .main-section {
             background: #f8f9fa;
             padding: 25px;
             border-radius: 12px;
             margin-bottom: 30px;
             border-left: 5px solid #667eea;
+        }
+        
+        .entry-methods {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+            flex-wrap: wrap;
+        }
+        
+        .entry-method {
+            flex: 1;
+            min-width: 200px;
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .entry-method:hover {
+            background: #f7fafc;
+        }
+        
+        .entry-method.active {
+            background: #ebf8ff;
+            border: 2px solid #667eea;
         }
         
         .platform-section {
@@ -134,6 +158,7 @@
             border-radius: 6px;
             padding: 15px;
             margin-bottom: 15px;
+            position: relative;
         }
         
         .post-grid {
@@ -155,6 +180,47 @@
         .rate-good { background: #bee3f8; color: #2c5282; }
         .rate-average { background: #fef5e7; color: #744210; }
         .rate-poor { background: #fed7d7; color: #742a2a; }
+        
+        .post-actions {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        
+        .edit-btn, .save-btn, .cancel-btn {
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .edit-btn {
+            background: #3182ce;
+            color: white;
+        }
+        
+        .save-btn {
+            background: #38a169;
+            color: white;
+        }
+        
+        .cancel-btn {
+            background: #718096;
+            color: white;
+        }
+        
+        .remove-btn {
+            background: #e53e3e;
+            color: white;
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
         
         input, select, textarea {
             padding: 8px 12px;
@@ -429,6 +495,37 @@
             font-size: 0.9em;
             color: #744210;
         }
+        
+        .editing {
+            background: #f0f8ff !important;
+            border: 2px solid #667eea !important;
+        }
+        
+        .date-input-help {
+            font-size: 0.8em;
+            color: #718096;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .date-input-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .entry-methods {
+                flex-direction: column;
+            }
+            
+            .post-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .post-actions {
+                justify-content: center;
+            }
+        }
     </style>
 </head>
 <body>
@@ -475,216 +572,118 @@
 
         <!-- Main App Content (shown when logged in) -->
         <div id="appContent" class="hidden">
-            <div class="week-selector">
-                <label for="weekRange"><strong>Week of:</strong></label>
-                <input type="date" id="weekStart" onchange="updateWeekEnd()">
-                <span>to</span>
-                <input type="date" id="weekEnd" readonly>
-                <button onclick="generateReport()">Generate Weekly Report</button>
-                <button onclick="exportData()" style="background: #38a169;">Export Data</button>
-            </div>
             
-            <!-- Input Method Tabs -->
-            <div class="input-method-tabs">
-                <button class="tab-button active" onclick="switchTab('manual')">Manual Entry</button>
-                <button class="tab-button" onclick="switchTab('bulk')">Bulk CSV Import</button>
-                <button class="tab-button" onclick="switchTab('screenshot')">🤖 AI Screenshot Analysis</button>
-            </div>
-            
-            <!-- Manual Entry Tab -->
-            <div id="manualTab" class="input-section">
-                <h2>📊 Platform Data Entry</h2>
-                
-                <!-- Instagram Section -->
-                <div class="platform-section">
-                    <div class="platform-header" onclick="togglePlatform('instagram')">
-                        <span>📸 Instagram</span>
-                        <span class="expand-icon">▼</span>
+            <!-- Date Range Selector -->
+            <div class="date-selector">
+                <h3>📅 Select Date Range</h3>
+                <div class="date-input-section">
+                    <div style="flex: 1; min-width: 200px;">
+                        <label><strong>Start Date:</strong></label>
+                        <input type="text" id="startDate" placeholder="2025-01-15, 01/15/2025, January 15, 2025" onchange="updateDateRange()">
+                        <div class="date-input-help">Enter date in any format: ISO (2025-01-15), US (01/15/2025), or natural (January 15, 2025)</div>
                     </div>
-                    <div id="instagram-content" class="platform-content">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                            <div>
-                                <label>Posts This Week:</label>
-                                <input type="number" id="ig-total-posts" onchange="saveData()">
-                            </div>
-                            <div>
-                                <label>Reels Archived (under 2%):</label>
-                                <input type="number" id="ig-archived-reels" onchange="saveData()">
-                            </div>
-                        </div>
-                        
-                        <div id="instagram-posts"></div>
-                        <button onclick="addPost('instagram')">+ Add Instagram Post</button>
-                        
-                        <div style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px;">
-                            <h4>Instagram Summary</h4>
-                            <div id="instagram-summary">Add posts to see summary</div>
-                        </div>
+                    <div style="flex: 1; min-width: 200px;">
+                        <label><strong>End Date:</strong></label>
+                        <input type="text" id="endDate" placeholder="Leave blank for 7-day range" onchange="updateDateRange()">
+                        <div class="date-input-help">Leave blank for automatic 7-day range, or enter custom end date</div>
+                    </div>
+                    <div style="flex: 1; min-width: 200px;">
+                        <label><strong>Selected Range:</strong></label>
+                        <div class="date-range-display" id="dateRangeDisplay">Please select start date</div>
                     </div>
                 </div>
-                
-                <!-- Facebook Section -->
-                <div class="platform-section">
-                    <div class="platform-header" onclick="togglePlatform('facebook')">
-                        <span>📘 Facebook</span>
-                        <span class="expand-icon">▼</span>
-                    </div>
-                    <div id="facebook-content" class="platform-content hidden">
-                        <div id="facebook-posts"></div>
-                        <button onclick="addPost('facebook')">+ Add Facebook Post</button>
-                        
-                        <div style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px;">
-                            <h4>Facebook Summary</h4>
-                            <div id="facebook-summary">Add posts to see summary</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Threads Section -->
-                <div class="platform-section">
-                    <div class="platform-header" onclick="togglePlatform('threads')">
-                        <span>🧵 Threads</span>
-                        <span class="expand-icon">▼</span>
-                    </div>
-                    <div id="threads-content" class="platform-content hidden">
-                        <div style="margin-bottom: 20px;">
-                            <label>Total Posts This Week:</label>
-                            <input type="number" id="threads-total-posts" onchange="saveData()">
-                        </div>
-                        
-                        <div id="threads-posts"></div>
-                        <button onclick="addPost('threads')">+ Add Threads Post</button>
-                        
-                        <div style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px;">
-                            <h4>Threads Summary</h4>
-                            <div id="threads-summary">Add posts to see summary</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- TikTok Section -->
-                <div class="platform-section">
-                    <div class="platform-header" onclick="togglePlatform('tiktok')">
-                        <span>🎵 TikTok</span>
-                        <span class="expand-icon">▼</span>
-                    </div>
-                    <div id="tiktok-content" class="platform-content hidden">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                            <div>
-                                <label>Status:</label>
-                                <select id="tiktok-status" onchange="saveData()">
-                                    <option value="active">Active Posting</option>
-                                    <option value="testing">Testing Phase</option>
-                                    <option value="paused">Paused</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label>Days of Optimization Completed:</label>
-                                <input type="text" id="tiktok-optimization" placeholder="e.g., 5/5" onchange="saveData()">
-                            </div>
-                        </div>
-                        
-                        <div id="tiktok-posts"></div>
-                        <button onclick="addPost('tiktok')">+ Add TikTok Post</button>
-                        
-                        <div style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px;">
-                            <h4>TikTok Summary</h4>
-                            <div id="tiktok-summary">Add posts to see summary</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Pinterest Section -->
-                <div class="platform-section">
-                    <div class="platform-header" onclick="togglePlatform('pinterest')">
-                        <span>📌 Pinterest</span>
-                        <span class="expand-icon">▼</span>
-                    </div>
-                    <div id="pinterest-content" class="platform-content hidden">
-                        <div style="margin-bottom: 20px;">
-                            <label>Status:</label>
-                            <select id="pinterest-status" onchange="saveData()">
-                                <option value="active">Active</option>
-                                <option value="migration">Blog Migration in Progress</option>
-                                <option value="paused">Not Yet Active</option>
-                            </select>
-                        </div>
-                        
-                        <div id="pinterest-posts"></div>
-                        <button onclick="addPost('pinterest')">+ Add Pinterest Pin</button>
-                        
-                        <div style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px;">
-                            <h4>Pinterest Summary</h4>
-                            <div id="pinterest-summary">Add pins to see summary</div>
-                        </div>
-                    </div>
+                <div style="display: flex; gap: 15px; margin-top: 15px; flex-wrap: wrap;">
+                    <button onclick="setThisWeek()">📅 This Week</button>
+                    <button onclick="setLastWeek()">⏮️ Last Week</button>
+                    <button onclick="generateReport()">📊 Generate Report</button>
+                    <button onclick="exportData()" style="background: #38a169;">📥 Export Data</button>
                 </div>
             </div>
             
-            <!-- Bulk Import Tab -->
-            <div id="bulkTab" class="input-section hidden">
-                <h2>📋 Bulk CSV Import</h2>
-                <p>Paste CSV data with columns: Platform, Post Type, Views, Likes, Comments, Shares, Engagement Rate</p>
-                <textarea class="bulk-input" id="csvInput" placeholder="Platform,Post Type,Views,Likes,Comments,Shares,Engagement Rate
+            <!-- Main Dashboard -->
+            <div class="main-section">
+                <h2>📊 Dashboard & Data Entry</h2>
+                
+                <!-- Entry Method Selection -->
+                <div class="entry-methods">
+                    <div class="entry-method active" onclick="switchEntryMethod('dashboard')" id="dashboardMethod">
+                        <h4>📊 Dashboard</h4>
+                        <p>View and manage all posts</p>
+                    </div>
+                    <div class="entry-method" onclick="switchEntryMethod('bulk')" id="bulkMethod">
+                        <h4>📋 Bulk CSV Import</h4>
+                        <p>Import multiple posts at once</p>
+                    </div>
+                    <div class="entry-method" onclick="switchEntryMethod('ai')" id="aiMethod">
+                        <h4>🤖 AI Screenshot Analysis</h4>
+                        <p>Extract data from screenshots</p>
+                    </div>
+                </div>
+                
+                <!-- Dashboard Section -->
+                <div id="dashboardSection" class="entry-section">
+                    <div id="platformSections">
+                        <!-- Platform sections will be populated here -->
+                    </div>
+                </div>
+                
+                <!-- Bulk Import Section -->
+                <div id="bulkSection" class="entry-section hidden">
+                    <h3>📋 Bulk CSV Import</h3>
+                    <p>Paste CSV data with columns: Platform, Post Type, Views, Likes, Comments, Shares, Engagement Rate</p>
+                    <textarea class="bulk-input" id="csvInput" placeholder="Platform,Post Type,Views,Likes,Comments,Shares,Engagement Rate
 Instagram,Reel,1250,89,12,5,8.48%
 Facebook,Post,456,23,8,2,7.24%"></textarea>
-                <button onclick="processBulkData()">Process Bulk Data</button>
-            </div>
-            
-            <!-- AI Screenshot Analysis Tab -->
-            <div id="screenshotTab" class="input-section hidden">
-                <h2>🤖 AI Screenshot Analysis</h2>
-                
-                <!-- API Key Setup Section -->
-                <div id="apiKeySection" class="api-key-section">
-                    <h3>🔑 OpenAI API Key Setup</h3>
-                    <p>To use AI screenshot analysis, enter your OpenAI API key. This key is stored securely in your browser session and is never saved to our servers.</p>
-                    
-                    <div style="display: flex; gap: 10px; align-items: center; margin: 20px 0;">
-                        <input type="password" id="openaiApiKey" placeholder="sk-proj-..." style="flex: 1;" onchange="validateApiKey()">
-                        <button onclick="saveApiKey()" id="saveApiKeyBtn" disabled>Save Key</button>
-                        <button onclick="clearApiKey()" id="clearApiKeyBtn" style="background: #e53e3e;" disabled>Clear</button>
-                    </div>
-                    
-                    <div class="api-key-info">
-                        <p><strong>How to get your OpenAI API Key:</strong></p>
-                        <ol>
-                            <li>Go to <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a></li>
-                            <li>Sign in or create an OpenAI account</li>
-                            <li>Click "Create new secret key"</li>
-                            <li>Copy the key and paste it above</li>
-                            <li>Add $5-10 in credits to your account</li>
-                        </ol>
-                        <p><strong>Cost:</strong> ~$0.01 per screenshot analyzed</p>
-                        <p><strong>Security:</strong> Your key is only stored in your browser session and never sent to our servers.</p>
-                    </div>
-                    
-                    <div id="apiKeyStatus" class="hidden">
-                        <div class="success-message">✅ API Key configured! You can now upload screenshots for analysis.</div>
-                    </div>
+                    <button onclick="processBulkData()">Process Bulk Data</button>
                 </div>
                 
-                <!-- Screenshot Upload Section -->
-                <div id="uploadSection" class="hidden">
-                    <p>Upload screenshots of your social media analytics and AI will automatically extract the data!</p>
-                    
-                    <div class="file-drop-zone" onclick="document.getElementById('screenshotInput').click()">
-                        <p>📱 Click to upload screenshots</p>
-                        <p style="font-size: 0.9em; color: #718096;">Supports: Instagram, TikTok, Facebook, Threads analytics screenshots</p>
-                        <p style="font-size: 0.8em; color: #a0aec0;">PNG, JPG, JPEG formats</p>
+                <!-- AI Screenshot Analysis Section -->
+                <div id="aiSection" class="entry-section hidden">
+                    <div id="apiKeySection" class="api-key-section">
+                        <h3>🔑 OpenAI API Key Setup</h3>
+                        <p>To use AI screenshot analysis, enter your OpenAI API key. This key is stored securely in your browser session.</p>
+                        
+                        <div style="display: flex; gap: 10px; align-items: center; margin: 20px 0;">
+                            <input type="password" id="openaiApiKey" placeholder="sk-proj-..." style="flex: 1;" onchange="validateApiKey()">
+                            <button onclick="saveApiKey()" id="saveApiKeyBtn" disabled>Save Key</button>
+                            <button onclick="clearApiKey()" id="clearApiKeyBtn" style="background: #e53e3e;" disabled>Clear</button>
+                        </div>
+                        
+                        <div class="api-key-info">
+                            <p><strong>How to get your OpenAI API Key:</strong></p>
+                            <ol>
+                                <li>Go to <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a></li>
+                                <li>Sign in or create an OpenAI account</li>
+                                <li>Click "Create new secret key"</li>
+                                <li>Copy the key and paste it above</li>
+                                <li>Add $5-10 in credits to your account</li>
+                            </ol>
+                            <p><strong>Cost:</strong> ~$0.01 per screenshot analyzed</p>
+                        </div>
+                        
+                        <div id="apiKeyStatus" class="hidden">
+                            <div class="success-message">✅ API Key configured! You can now upload screenshots for analysis.</div>
+                        </div>
                     </div>
-                    <input type="file" id="screenshotInput" accept="image/*" multiple style="display: none;" onchange="analyzeScreenshots(event)">
                     
-                    <div id="analysisResults" style="margin-top: 20px;"></div>
-                    <div id="extractedData" style="margin-top: 20px;"></div>
+                    <div id="uploadSection" class="hidden">
+                        <div class="file-drop-zone" onclick="document.getElementById('screenshotInput').click()">
+                            <p>📱 Click to upload screenshots</p>
+                            <p style="font-size: 0.9em; color: #718096;">Supports: Instagram, TikTok, Facebook, Threads analytics screenshots</p>
+                            <p style="font-size: 0.8em; color: #a0aec0;">PNG, JPG, JPEG formats</p>
+                        </div>
+                        <input type="file" id="screenshotInput" accept="image/*" multiple style="display: none;" onchange="analyzeScreenshots(event)">
+                        
+                        <div id="analysisResults" style="margin-top: 20px;"></div>
+                    </div>
                 </div>
             </div>
             
-            <div class="loading" id="loadingIndicator">Loading your data...</div>
+            <div class="loading" id="loadingIndicator" style="display: none;">Loading your data...</div>
             
             <!-- Weekly Summary -->
             <div class="summary-section">
-                <h2>📈 Weekly Performance Summary</h2>
+                <h2>📈 Performance Summary</h2>
                 <div class="summary-grid" id="summaryGrid">
                     <!-- Summary cards will be generated here -->
                 </div>
@@ -737,7 +736,9 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         let currentUser = null;
         let postCounter = 0;
         let initializationError = null;
-        let userApiKey = null; // Store user's OpenAI API key in session
+        let userApiKey = null;
+        let currentEntryMethod = 'dashboard';
+        let editingPostId = null;
 
         try {
             const firebaseConfig = {
@@ -750,13 +751,11 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 measurementId: "G-WFQQNGW21G"
             };
 
-            // Initialize Firebase with error handling
             app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getFirestore(app);
             
             console.log('Firebase initialized successfully');
-            showDebugInfo(`Firebase initialized successfully. Domain: ${window.location.hostname}`);
 
         } catch (error) {
             console.error('Firebase initialization error:', error);
@@ -767,11 +766,16 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         // Make functions available globally
         window.signInWithGoogle = signInWithGoogle;
         window.signOut = signOut;
-        window.addPost = addPost;
-        window.removePost = removePost;
-        window.updateWeekEnd = updateWeekEnd;
-        window.switchTab = switchTab;
+        window.updateDateRange = updateDateRange;
+        window.setThisWeek = setThisWeek;
+        window.setLastWeek = setLastWeek;
+        window.switchEntryMethod = switchEntryMethod;
         window.togglePlatform = togglePlatform;
+        window.addPost = addPost;
+        window.editPost = editPost;
+        window.savePost = savePost;
+        window.cancelEdit = cancelEdit;
+        window.removePost = removePost;
         window.saveData = saveData;
         window.updateTimeAnalysis = updateTimeAnalysis;
         window.generateReport = generateReport;
@@ -783,15 +787,59 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         window.clearApiKey = clearApiKey;
         window.validateApiKey = validateApiKey;
 
+        // Date parsing utility function
+        function parseFlexibleDate(input) {
+            if (!input || input.trim() === '') return null;
+            
+            const trimmedInput = input.trim();
+            let dateAttempt;
+            
+            // Try parsing MM/DD/YYYY format specifically first
+            const mmddyyyyMatch = trimmedInput.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (mmddyyyyMatch) {
+                const [, month, day, year] = mmddyyyyMatch;
+                dateAttempt = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                if (!isNaN(dateAttempt.getTime())) {
+                    return dateAttempt;
+                }
+            }
+            
+            // Try parsing YYYY-MM-DD format specifically
+            const yyyymmddMatch = trimmedInput.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+            if (yyyymmddMatch) {
+                const [, year, month, day] = yyyymmddMatch;
+                dateAttempt = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                if (!isNaN(dateAttempt.getTime())) {
+                    return dateAttempt;
+                }
+            }
+            
+            // Try direct parsing for natural language dates
+            dateAttempt = new Date(trimmedInput);
+            if (!isNaN(dateAttempt.getTime()) && dateAttempt.getFullYear() > 1900) {
+                return new Date(dateAttempt.getFullYear(), dateAttempt.getMonth(), dateAttempt.getDate());
+            }
+            
+            return null;
+        }
+
+        function formatDateDisplay(date) {
+            if (!date) return '';
+            return date.toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+        }
+
         // Initialize app
         window.addEventListener('load', function() {
             console.log('Window loaded, initializing...');
             
-            const today = new Date();
-            const monday = new Date(today);
-            monday.setDate(today.getDate() - today.getDay() + 1);
-            document.getElementById('weekStart').value = monday.toISOString().split('T')[0];
-            updateWeekEnd();
+            // Set default to this week
+            setThisWeek();
+            initializePlatforms();
             
             if (!initializationError) {
                 try {
@@ -836,19 +884,13 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                     prompt: 'select_account'
                 });
 
-                console.log('Attempting sign in with popup...');
-                showDebugInfo('Attempting to open Google sign-in popup...');
-
                 const result = await signInWithPopup(auth, provider);
-                
                 console.log('Sign in successful:', result.user.email);
-                showDebugInfo(`Sign in successful for: ${result.user.email}`);
                 
             } catch (error) {
                 console.error('Sign in error:', error);
                 
                 let errorMessage = 'Unknown error occurred';
-                let debugMessage = `Error Code: ${error.code}\nError Message: ${error.message}`;
                 
                 switch (error.code) {
                     case 'auth/popup-blocked':
@@ -859,13 +901,9 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                         break;
                     case 'auth/unauthorized-domain':
                         errorMessage = 'This domain is not authorized for OAuth operations. Please contact support.';
-                        debugMessage += `\nCurrent domain: ${window.location.hostname}`;
                         break;
                     case 'auth/operation-not-allowed':
                         errorMessage = 'Google Sign-In is not enabled. Please contact support.';
-                        break;
-                    case 'auth/invalid-api-key':
-                        errorMessage = 'Invalid API key. Please contact support.';
                         break;
                     default:
                         errorMessage = `Authentication failed: ${error.message}`;
@@ -873,7 +911,6 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 }
                 
                 showError(errorMessage);
-                showDebugInfo(debugMessage);
                 
             } finally {
                 signInBtn.disabled = false;
@@ -896,9 +933,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             }
 
             try {
-                // Clear API key when signing out
                 userApiKey = null;
-                
                 await firebaseSignOut(auth);
                 console.log('Sign out successful');
                 hideError();
@@ -920,13 +955,6 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             document.getElementById('errorMessage').classList.add('hidden');
         }
 
-        function showDebugInfo(message) {
-            const debugDiv = document.getElementById('debugInfo');
-            const debugText = document.getElementById('debugText');
-            debugText.textContent = message;
-            debugDiv.classList.remove('hidden');
-        }
-
         function showAuthSection() {
             document.getElementById('authSection').classList.remove('hidden');
             document.getElementById('userSection').classList.add('hidden');
@@ -945,162 +973,122 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             hideError();
             document.getElementById('debugInfo').classList.add('hidden');
             
-            // Check if API key is already stored in session
             checkApiKeyStatus();
         }
 
-        // Data functions
-        async function loadUserData() {
-            if (!currentUser || initializationError) return;
-
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            loadingIndicator.style.display = 'block';
-
-            try {
-                const weekKey = document.getElementById('weekStart').value;
-                const docRef = doc(db, 'users', currentUser.uid, 'weeks', weekKey);
-                const docSnap = await getDoc(docRef);
-
-                if (docSnap.exists()) {
-                    const weekData = docSnap.data();
-                    populateFormWithData(weekData);
-                }
-
-                loadingIndicator.style.display = 'none';
-            } catch (error) {
-                console.error('Error loading data:', error);
-                loadingIndicator.style.display = 'none';
-                showError(`Failed to load data: ${error.message}`);
-            }
-        }
-
-        async function saveData() {
-            if (!currentUser || initializationError) return;
-
-            try {
-                const weekData = collectCurrentWeekData();
-                const weekKey = document.getElementById('weekStart').value;
-                const docRef = doc(db, 'users', currentUser.uid, 'weeks', weekKey);
-                await setDoc(docRef, weekData);
-                console.log('Data saved successfully');
-            } catch (error) {
-                console.error('Error saving data:', error);
-                showError(`Failed to save data: ${error.message}`);
-            }
-        }
-
-        function collectCurrentWeekData() {
-            const weekData = {
-                weekStart: document.getElementById('weekStart').value,
-                weekEnd: document.getElementById('weekEnd').value,
-                platforms: {},
-                timeInvestment: {
-                    creation: parseFloat(document.getElementById('time-creation')?.value) || 0,
-                    management: parseFloat(document.getElementById('time-management')?.value) || 0,
-                    engagement: parseFloat(document.getElementById('time-engagement')?.value) || 0,
-                    analytics: parseFloat(document.getElementById('time-analytics')?.value) || 0
-                },
-                lastUpdated: new Date().toISOString()
-            };
-
-            const platforms = ['instagram', 'facebook', 'threads', 'tiktok', 'pinterest'];
-            platforms.forEach(platform => {
-                weekData.platforms[platform] = {
-                    posts: collectPostsFromPlatform(platform)
-                };
-            });
-
-            return weekData;
-        }
-
-        function collectPostsFromPlatform(platform) {
-            const container = document.getElementById(platform + '-posts');
-            if (!container) return [];
-
-            const posts = container.querySelectorAll('.post-entry');
-            const postData = [];
-
-            posts.forEach(post => {
-                postData.push({
-                    description: post.querySelector('.post-description')?.value || '',
-                    views: parseInt(post.querySelector('.post-views')?.value) || 0,
-                    likes: parseInt(post.querySelector('.post-likes')?.value) || 0,
-                    comments: parseInt(post.querySelector('.post-comments')?.value) || 0,
-                    shares: parseInt(post.querySelector('.post-shares')?.value) || 0,
-                    notes: post.querySelector('.post-notes')?.value || ''
-                });
-            });
-
-            return postData;
-        }
-
-        function populateFormWithData(weekData) {
-            document.getElementById('weekStart').value = weekData.weekStart || '';
-            document.getElementById('weekEnd').value = weekData.weekEnd || '';
-
-            const platforms = ['instagram', 'facebook', 'threads', 'tiktok', 'pinterest'];
+        // Date range functions
+        function updateDateRange() {
+            const startInput = document.getElementById('startDate').value.trim();
+            const endInput = document.getElementById('endDate').value.trim();
+            const displayDiv = document.getElementById('dateRangeDisplay');
             
-            platforms.forEach(platform => {
-                if (weekData.platforms?.[platform]?.posts) {
-                    const container = document.getElementById(platform + '-posts');
-                    if (container) {
-                        container.innerHTML = '';
-                        weekData.platforms[platform].posts.forEach(postData => {
-                            addPost(platform);
-                            const lastPost = container.lastElementChild;
-                            if (lastPost) {
-                                lastPost.querySelector('.post-description').value = postData.description || '';
-                                lastPost.querySelector('.post-views').value = postData.views || '';
-                                lastPost.querySelector('.post-likes').value = postData.likes || '';
-                                lastPost.querySelector('.post-comments').value = postData.comments || '';
-                                lastPost.querySelector('.post-shares').value = postData.shares || '';
-                                lastPost.querySelector('.post-notes').value = postData.notes || '';
-                                calculateEngagement(lastPost.querySelector('.post-views'));
-                            }
-                        });
-                    }
-                }
-            });
-
-            if (weekData.timeInvestment) {
-                const timeData = weekData.timeInvestment;
-                if (document.getElementById('time-creation')) {
-                    document.getElementById('time-creation').value = timeData.creation || 0;
-                }
-                if (document.getElementById('time-management')) {
-                    document.getElementById('time-management').value = timeData.management || 0;
-                }
-                if (document.getElementById('time-engagement')) {
-                    document.getElementById('time-engagement').value = timeData.engagement || 0;
-                }
-                if (document.getElementById('time-analytics')) {
-                    document.getElementById('time-analytics').value = timeData.analytics || 0;
-                }
-                updateTimeAnalysis();
+            if (!startInput) {
+                displayDiv.textContent = 'Please select start date';
+                return;
             }
-        }
-
-        // UI Functions
-        function updateWeekEnd() {
-            const startDate = new Date(document.getElementById('weekStart').value);
-            const endDate = new Date(startDate);
-            endDate.setDate(startDate.getDate() + 6);
-            document.getElementById('weekEnd').value = endDate.toISOString().split('T')[0];
             
+            const startDate = parseFlexibleDate(startInput);
+            if (!startDate) {
+                displayDiv.textContent = 'Invalid start date format';
+                return;
+            }
+            
+            let endDate;
+            if (endInput) {
+                endDate = parseFlexibleDate(endInput);
+                if (!endDate) {
+                    displayDiv.textContent = 'Invalid end date format';
+                    return;
+                }
+            } else {
+                // Auto-calculate 7-day range
+                endDate = new Date(startDate);
+                endDate.setDate(startDate.getDate() + 6);
+                document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+            }
+            
+            displayDiv.textContent = `${formatDateDisplay(startDate)} → ${formatDateDisplay(endDate)}`;
+            
+            // Load data for new date range
             if (currentUser && !initializationError) {
                 loadUserData();
             }
         }
 
-        function switchTab(tabName) {
-            document.getElementById('manualTab').classList.add('hidden');
-            document.getElementById('bulkTab').classList.add('hidden');
-            document.getElementById('screenshotTab').classList.add('hidden');
+        function setThisWeek() {
+            const today = new Date();
+            const monday = new Date(today);
+            monday.setDate(today.getDate() - today.getDay() + 1); // Get Monday
             
-            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6); // Get Sunday
             
-            document.getElementById(tabName + 'Tab').classList.remove('hidden');
-            event.target.classList.add('active');
+            document.getElementById('startDate').value = monday.toISOString().split('T')[0];
+            document.getElementById('endDate').value = sunday.toISOString().split('T')[0];
+            
+            updateDateRange();
+        }
+
+        function setLastWeek() {
+            const today = new Date();
+            const lastMonday = new Date(today);
+            lastMonday.setDate(today.getDate() - today.getDay() + 1 - 7); // Get last Monday
+            
+            const lastSunday = new Date(lastMonday);
+            lastSunday.setDate(lastMonday.getDate() + 6); // Get last Sunday
+            
+            document.getElementById('startDate').value = lastMonday.toISOString().split('T')[0];
+            document.getElementById('endDate').value = lastSunday.toISOString().split('T')[0];
+            
+            updateDateRange();
+        }
+
+        function switchEntryMethod(method) {
+            currentEntryMethod = method;
+            
+            // Update active method styling
+            document.querySelectorAll('.entry-method').forEach(el => el.classList.remove('active'));
+            document.getElementById(method + 'Method').classList.add('active');
+            
+            // Show/hide sections
+            document.getElementById('dashboardSection').classList.toggle('hidden', method !== 'dashboard');
+            document.getElementById('bulkSection').classList.toggle('hidden', method !== 'bulk');
+            document.getElementById('aiSection').classList.toggle('hidden', method !== 'ai');
+        }
+
+        function initializePlatforms() {
+            const platforms = [
+                { id: 'instagram', name: '📸 Instagram', icon: '📸' },
+                { id: 'facebook', name: '📘 Facebook', icon: '📘' },
+                { id: 'threads', name: '🧵 Threads', icon: '🧵' },
+                { id: 'tiktok', name: '🎵 TikTok', icon: '🎵' },
+                { id: 'pinterest', name: '📌 Pinterest', icon: '📌' }
+            ];
+
+            const container = document.getElementById('platformSections');
+            container.innerHTML = '';
+
+            platforms.forEach(platform => {
+                const platformDiv = document.createElement('div');
+                platformDiv.className = 'platform-section';
+                platformDiv.innerHTML = `
+                    <div class="platform-header" onclick="togglePlatform('${platform.id}')">
+                        <span>${platform.name}</span>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div id="${platform.id}-content" class="platform-content">
+                        <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+                            <button onclick="addPost('${platform.id}')" style="background: #38a169;">+ Add Post</button>
+                        </div>
+                        <div id="${platform.id}-posts"></div>
+                        <div style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px;">
+                            <h4>${platform.name} Summary</h4>
+                            <div id="${platform.id}-summary">Add posts to see summary</div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(platformDiv);
+            });
         }
 
         function togglePlatform(platform) {
@@ -1117,15 +1105,19 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             
             const postDiv = document.createElement('div');
             postDiv.className = 'post-entry';
+            postDiv.dataset.postId = postCounter;
             postDiv.innerHTML = `
                 <div class="post-grid">
-                    <input type="text" placeholder="Post description/type" class="post-description" onchange="saveData()">
+                    <input type="text" placeholder="Post description/type" class="post-description" onchange="calculateEngagement(this); saveData()">
                     <input type="number" placeholder="Views" class="post-views" onchange="calculateEngagement(this); saveData()">
                     <input type="number" placeholder="Likes" class="post-likes" onchange="calculateEngagement(this); saveData()">
                     <input type="number" placeholder="Comments" class="post-comments" onchange="calculateEngagement(this); saveData()">
                     <input type="number" placeholder="Shares" class="post-shares" onchange="calculateEngagement(this); saveData()">
                     <div class="engagement-rate" id="rate-${postCounter}">0%</div>
-                    <button onclick="removePost(this)" style="background: #e53e3e; padding: 5px 10px;">Remove</button>
+                    <div class="post-actions">
+                        <button class="edit-btn" onclick="editPost('${platform}', ${postCounter})">Edit</button>
+                        <button class="remove-btn" onclick="removePost(this)">Remove</button>
+                    </div>
                 </div>
                 <div style="margin-top: 10px;">
                     <label style="font-size: 12px; color: #718096;">Notes:</label>
@@ -1135,16 +1127,91 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             
             container.appendChild(postDiv);
             updatePlatformSummary(platform);
+            
+            // Auto-save when adding new post
+            if (currentUser && !initializationError) {
+                saveData().then(() => {
+                    console.log('Manual post saved successfully');
+                });
+            }
+        }
+
+        function editPost(platform, postId) {
+            if (editingPostId !== null && editingPostId !== postId) {
+                cancelEdit(); // Cancel any existing edit
+            }
+            
+            editingPostId = postId;
+            const postDiv = document.querySelector(`[data-post-id="${postId}"]`);
+            postDiv.classList.add('editing');
+            
+            // Change edit button to save/cancel buttons
+            const actionsDiv = postDiv.querySelector('.post-actions');
+            actionsDiv.innerHTML = `
+                <button class="save-btn" onclick="savePost('${platform}', ${postId})">Save</button>
+                <button class="cancel-btn" onclick="cancelEdit()">Cancel</button>
+                <button class="remove-btn" onclick="removePost(this)">Remove</button>
+            `;
+        }
+
+        function savePost(platform, postId) {
+            editingPostId = null;
+            const postDiv = document.querySelector(`[data-post-id="${postId}"]`);
+            postDiv.classList.remove('editing');
+            
+            // Change buttons back to edit
+            const actionsDiv = postDiv.querySelector('.post-actions');
+            actionsDiv.innerHTML = `
+                <button class="edit-btn" onclick="editPost('${platform}', ${postId})">Edit</button>
+                <button class="remove-btn" onclick="removePost(this)">Remove</button>
+            `;
+            
+            // Trigger recalculation and save
+            const viewsInput = postDiv.querySelector('.post-views');
+            calculateEngagement(viewsInput);
+            updatePlatformSummary(platform);
+            
+            // Save data after editing
             if (currentUser && !initializationError) {
                 saveData();
             }
         }
 
+        function cancelEdit() {
+            if (editingPostId === null) return;
+            
+            const postDiv = document.querySelector(`[data-post-id="${editingPostId}"]`);
+            postDiv.classList.remove('editing');
+            
+            // Find platform by looking up the DOM tree
+            const platformSection = postDiv.closest('.platform-section');
+            const platformName = platformSection.querySelector('.platform-header span').textContent;
+            const platform = platformName.toLowerCase().replace(/[^a-z]/g, '');
+            
+            // Change buttons back to edit
+            const actionsDiv = postDiv.querySelector('.post-actions');
+            actionsDiv.innerHTML = `
+                <button class="edit-btn" onclick="editPost('${platform}', ${editingPostId})">Edit</button>
+                <button class="remove-btn" onclick="removePost(this)">Remove</button>
+            `;
+            
+            editingPostId = null;
+        }
+
         function removePost(button) {
             const postEntry = button.closest('.post-entry');
-            const platform = button.closest('.platform-section').querySelector('.platform-header span').textContent.split(' ')[1].toLowerCase();
+            const platformSection = postEntry.closest('.platform-section');
+            const platformName = platformSection.querySelector('.platform-header span').textContent;
+            const platform = platformName.toLowerCase().replace(/[^a-z]/g, '');
+            
+            if (editingPostId && postEntry.dataset.postId == editingPostId) {
+                editingPostId = null;
+            }
+            
             postEntry.remove();
             updatePlatformSummary(platform);
+            
+            // Save data after removing post
             if (currentUser && !initializationError) {
                 saveData();
             }
@@ -1176,7 +1243,9 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 }
             }
             
-            const platform = element.closest('.platform-section').querySelector('.platform-header span').textContent.split(' ')[1].toLowerCase();
+            const platformSection = element.closest('.platform-section');
+            const platformName = platformSection.querySelector('.platform-header span').textContent;
+            const platform = platformName.toLowerCase().replace(/[^a-z]/g, '');
             updatePlatformSummary(platform);
         }
 
@@ -1206,7 +1275,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                     if (rate > bestPost.rate) {
                         bestPost = { rate, description };
                     }
-                    if (rate < worstPost.rate) {
+                    if (rate < worstPost.rate && engagementRates.length > 1) {
                         worstPost = { rate, description };
                     }
                 }
@@ -1226,7 +1295,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 summaryHTML += `<strong>Best Post:</strong> ${bestPost.description} (${bestPost.rate.toFixed(2)}%)<br>`;
             }
             
-            if (worstPost.rate < 100 && worstPost.rate !== bestPost.rate) {
+            if (worstPost.rate < 100 && worstPost.rate !== bestPost.rate && engagementRates.length > 1) {
                 summaryHTML += `<strong>Worst Post:</strong> ${worstPost.description} (${worstPost.rate.toFixed(2)}%)<br>`;
             }
             
@@ -1294,6 +1363,176 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             `;
         }
 
+        // Data functions - ENHANCED FOR PERSISTENCE
+        async function loadUserData() {
+            if (!currentUser || initializationError) return;
+
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            loadingIndicator.style.display = 'block';
+
+            try {
+                const startDate = document.getElementById('startDate').value;
+                if (!startDate) {
+                    loadingIndicator.style.display = 'none';
+                    return;
+                }
+                
+                const docRef = doc(db, 'users', currentUser.uid, 'dateRanges', startDate);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const rangeData = docSnap.data();
+                    console.log('Loading data for range:', startDate, rangeData);
+                    populateFormWithData(rangeData);
+                } else {
+                    console.log('No data found for date range:', startDate);
+                }
+
+                loadingIndicator.style.display = 'none';
+            } catch (error) {
+                console.error('Error loading data:', error);
+                loadingIndicator.style.display = 'none';
+                showError(`Failed to load data: ${error.message}`);
+            }
+        }
+
+        async function saveData() {
+            if (!currentUser || initializationError) return;
+
+            try {
+                const rangeData = collectCurrentRangeData();
+                const startDate = document.getElementById('startDate').value;
+                if (!startDate) return;
+                
+                console.log('Saving data for range:', startDate, rangeData);
+                
+                const docRef = doc(db, 'users', currentUser.uid, 'dateRanges', startDate);
+                await setDoc(docRef, rangeData, { merge: true });
+                console.log('Data saved successfully');
+            } catch (error) {
+                console.error('Error saving data:', error);
+                showError(`Failed to save data: ${error.message}`);
+            }
+        }
+
+        function collectCurrentRangeData() {
+            const rangeData = {
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                platforms: {},
+                timeInvestment: {
+                    creation: parseFloat(document.getElementById('time-creation')?.value) || 0,
+                    management: parseFloat(document.getElementById('time-management')?.value) || 0,
+                    engagement: parseFloat(document.getElementById('time-engagement')?.value) || 0,
+                    analytics: parseFloat(document.getElementById('time-analytics')?.value) || 0
+                },
+                lastUpdated: new Date().toISOString()
+            };
+
+            const platforms = ['instagram', 'facebook', 'threads', 'tiktok', 'pinterest'];
+            platforms.forEach(platform => {
+                rangeData.platforms[platform] = {
+                    posts: collectPostsFromPlatform(platform)
+                };
+            });
+
+            return rangeData;
+        }
+
+        function collectPostsFromPlatform(platform) {
+            const container = document.getElementById(platform + '-posts');
+            if (!container) return [];
+
+            const posts = container.querySelectorAll('.post-entry');
+            const postData = [];
+
+            posts.forEach(post => {
+                postData.push({
+                    id: post.dataset.postId,
+                    description: post.querySelector('.post-description')?.value || '',
+                    views: parseInt(post.querySelector('.post-views')?.value) || 0,
+                    likes: parseInt(post.querySelector('.post-likes')?.value) || 0,
+                    comments: parseInt(post.querySelector('.post-comments')?.value) || 0,
+                    shares: parseInt(post.querySelector('.post-shares')?.value) || 0,
+                    notes: post.querySelector('.post-notes')?.value || '',
+                    createdAt: new Date().toISOString()
+                });
+            });
+
+            return postData;
+        }
+
+        function populateFormWithData(rangeData) {
+            console.log('Populating form with data:', rangeData);
+            
+            document.getElementById('startDate').value = rangeData.startDate || '';
+            document.getElementById('endDate').value = rangeData.endDate || '';
+            updateDateRange();
+
+            const platforms = ['instagram', 'facebook', 'threads', 'tiktok', 'pinterest'];
+            
+            // Clear existing posts first
+            platforms.forEach(platform => {
+                const container = document.getElementById(platform + '-posts');
+                if (container) {
+                    container.innerHTML = '';
+                }
+            });
+            
+            // Reset post counter to avoid ID conflicts
+            postCounter = 0;
+            
+            platforms.forEach(platform => {
+                if (rangeData.platforms?.[platform]?.posts) {
+                    const container = document.getElementById(platform + '-posts');
+                    if (container) {
+                        rangeData.platforms[platform].posts.forEach(postData => {
+                            // Use stored ID if available, otherwise increment counter
+                            if (postData.id) {
+                                postCounter = Math.max(postCounter, parseInt(postData.id));
+                            }
+                            
+                            addPost(platform);
+                            const lastPost = container.lastElementChild;
+                            if (lastPost) {
+                                lastPost.querySelector('.post-description').value = postData.description || '';
+                                lastPost.querySelector('.post-views').value = postData.views || '';
+                                lastPost.querySelector('.post-likes').value = postData.likes || '';
+                                lastPost.querySelector('.post-comments').value = postData.comments || '';
+                                lastPost.querySelector('.post-shares').value = postData.shares || '';
+                                lastPost.querySelector('.post-notes').value = postData.notes || '';
+                                
+                                // Restore the original post ID if it exists
+                                if (postData.id) {
+                                    lastPost.dataset.postId = postData.id;
+                                }
+                                
+                                calculateEngagement(lastPost.querySelector('.post-views'));
+                            }
+                        });
+                        updatePlatformSummary(platform);
+                    }
+                }
+            });
+
+            if (rangeData.timeInvestment) {
+                const timeData = rangeData.timeInvestment;
+                if (document.getElementById('time-creation')) {
+                    document.getElementById('time-creation').value = timeData.creation || 0;
+                }
+                if (document.getElementById('time-management')) {
+                    document.getElementById('time-management').value = timeData.management || 0;
+                }
+                if (document.getElementById('time-engagement')) {
+                    document.getElementById('time-engagement').value = timeData.engagement || 0;
+                }
+                if (document.getElementById('time-analytics')) {
+                    document.getElementById('time-analytics').value = timeData.analytics || 0;
+                }
+                updateTimeAnalysis();
+            }
+        }
+
         function updateTimeAnalysis() {
             const creation = parseFloat(document.getElementById('time-creation').value) || 0;
             const management = parseFloat(document.getElementById('time-management').value) || 0;
@@ -1322,24 +1561,24 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         }
 
         function generateReport() {
-            const weekData = collectCurrentWeekData();
-            const reportText = generateReportText(weekData);
+            const rangeData = collectCurrentRangeData();
+            const reportText = generateReportText(rangeData);
             const blob = new Blob([reportText], { type: 'text/plain' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = `social-media-report-${weekData.weekStart}.txt`;
+            link.download = `social-media-report-${rangeData.startDate}.txt`;
             link.click();
             
             alert('Report generated and downloaded!');
         }
 
-        function generateReportText(weekData) {
+        function generateReportText(rangeData) {
             const platforms = ['instagram', 'facebook', 'threads', 'tiktok', 'pinterest'];
-            let report = `Social Media Weekly Report\n`;
-            report += `Week of: ${weekData.weekStart} - ${weekData.weekEnd}\n\n`;
+            let report = `Social Media Analytics Report\n`;
+            report += `Date Range: ${rangeData.startDate} - ${rangeData.endDate}\n\n`;
             
             platforms.forEach(platform => {
-                const platformData = weekData.platforms[platform];
+                const platformData = rangeData.platforms[platform];
                 if (platformData && platformData.posts && platformData.posts.length > 0) {
                     report += `${platform.charAt(0).toUpperCase() + platform.slice(1)}:\n`;
                     report += `Posts: ${platformData.posts.length}\n`;
@@ -1371,21 +1610,72 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         }
 
         function exportData() {
-            const weekData = collectCurrentWeekData();
-            const dataStr = JSON.stringify(weekData, null, 2);
+            const rangeData = collectCurrentRangeData();
+            const dataStr = JSON.stringify(rangeData, null, 2);
             const dataBlob = new Blob([dataStr], {type: 'application/json'});
             
             const link = document.createElement('a');
             link.href = URL.createObjectURL(dataBlob);
-            link.download = `social-media-data-${weekData.weekStart}.json`;
+            link.download = `social-media-data-${rangeData.startDate}.json`;
             link.click();
         }
 
         function processBulkData() {
-            alert('Feature coming soon - manually parse CSV data into posts');
+            const csvData = document.getElementById('csvInput').value.trim();
+            if (!csvData) {
+                alert('Please enter CSV data first');
+                return;
+            }
+            
+            const lines = csvData.split('\n');
+            const header = lines[0].toLowerCase();
+            
+            // Simple CSV parsing
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                
+                const values = line.split(',');
+                if (values.length < 6) continue;
+                
+                const platform = values[0].toLowerCase().trim();
+                const postType = values[1].trim();
+                const views = parseInt(values[2]) || 0;
+                const likes = parseInt(values[3]) || 0;
+                const comments = parseInt(values[4]) || 0;
+                const shares = parseInt(values[5]) || 0;
+                
+                // Add to appropriate platform
+                if (['instagram', 'facebook', 'threads', 'tiktok', 'pinterest'].includes(platform)) {
+                    addPost(platform);
+                    const container = document.getElementById(platform + '-posts');
+                    const lastPost = container.lastElementChild;
+                    
+                    if (lastPost) {
+                        lastPost.querySelector('.post-description').value = postType;
+                        lastPost.querySelector('.post-views').value = views;
+                        lastPost.querySelector('.post-likes').value = likes;
+                        lastPost.querySelector('.post-comments').value = comments;
+                        lastPost.querySelector('.post-shares').value = shares;
+                        calculateEngagement(lastPost.querySelector('.post-views'));
+                    }
+                }
+            }
+            
+            if (currentUser && !initializationError) {
+                saveData().then(() => {
+                    console.log('Bulk import data saved successfully');
+                    alert('✅ Bulk data imported and saved successfully!');
+                }).catch((error) => {
+                    console.error('Save error:', error);
+                    alert('✅ Bulk data imported successfully! (Note: Save to cloud failed - data exists locally)');
+                });
+            } else {
+                alert('✅ Bulk data imported successfully!');
+            }
         }
 
-        // API Key Management Functions - FIXED VERSION
+        // API Key Management Functions
         function validateApiKey() {
             const apiKeyInput = document.getElementById('openaiApiKey');
             const saveBtn = document.getElementById('saveApiKeyBtn');
@@ -1395,8 +1685,6 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             const isValid = apiKey.startsWith('sk-') && apiKey.length > 20;
             
             saveBtn.disabled = !isValid;
-            
-            // Only enable clear button if we have a stored key OR current input
             clearBtn.disabled = !(userApiKey || apiKey);
         }
         
@@ -1409,21 +1697,16 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 return;
             }
             
-            // ACTUALLY store the API key (this was the bug!)
             userApiKey = apiKey;
-            console.log('API Key stored:', userApiKey ? 'Yes (length: ' + userApiKey.length + ')' : 'No');
+            console.log('API Key stored:', userApiKey ? 'Yes' : 'No');
             
-            // Show success and enable upload section
             document.getElementById('apiKeyStatus').classList.remove('hidden');
             document.getElementById('uploadSection').classList.remove('hidden');
             
-            // DON'T clear the input immediately - let user see it's saved
-            // Change the input to show it's saved
             apiKeyInput.placeholder = 'API Key saved ✅';
             apiKeyInput.style.backgroundColor = '#f0fff4';
             apiKeyInput.style.borderColor = '#48bb78';
             
-            // Update button states
             document.getElementById('saveApiKeyBtn').disabled = true;
             document.getElementById('clearApiKeyBtn').disabled = false;
             
@@ -1434,12 +1717,10 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             userApiKey = null;
             console.log('API Key cleared');
             
-            // Hide sections and reset UI
             document.getElementById('apiKeyStatus').classList.add('hidden');
             document.getElementById('uploadSection').classList.add('hidden');
             document.getElementById('analysisResults').innerHTML = '';
             
-            // Reset form
             const apiKeyInput = document.getElementById('openaiApiKey');
             apiKeyInput.value = '';
             apiKeyInput.placeholder = 'sk-proj-...';
@@ -1455,13 +1736,11 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         function checkApiKeyStatus() {
             console.log('Checking API key status:', userApiKey ? 'Key exists' : 'No key');
             
-            // Check if user has API key stored in session
             if (userApiKey) {
                 document.getElementById('apiKeyStatus').classList.remove('hidden');
                 document.getElementById('uploadSection').classList.remove('hidden');
                 document.getElementById('clearApiKeyBtn').disabled = false;
                 
-                // Update input appearance to show key is saved
                 const apiKeyInput = document.getElementById('openaiApiKey');
                 apiKeyInput.placeholder = 'API Key saved ✅';
                 apiKeyInput.style.backgroundColor = '#f0fff4';
@@ -1495,7 +1774,6 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         async function analyzeScreenshot(file, index) {
             const resultsContainer = document.getElementById('analysisResults');
             
-            // Create analysis result container
             const resultDiv = document.createElement('div');
             resultDiv.className = 'analysis-result';
             resultDiv.innerHTML = `
@@ -1514,19 +1792,15 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                         <option value="tiktok">TikTok</option>
                         <option value="pinterest">Pinterest</option>
                     </select>
-                    <button onclick="addExtractedDataToTracker(${index})" style="background: #38a169;">Add to Tracker</button>
+                    <button onclick="addExtractedDataToTracker(${index})" style="background: #38a169;">Add to Dashboard</button>
                 </div>
             `;
             resultsContainer.appendChild(resultDiv);
             
             try {
-                // Convert image to base64
                 const base64Image = await fileToBase64(file);
-                
-                // Call OpenAI Vision API
                 const extractedData = await callOpenAIVision(base64Image);
                 
-                // Update the result
                 const statusDiv = resultDiv.querySelector('.status');
                 const loadingSpinner = resultDiv.querySelector('.loading-spinner');
                 const dataGrid = document.getElementById(`data-${index}`);
@@ -1535,7 +1809,6 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 loadingSpinner.style.display = 'none';
                 statusDiv.innerHTML = '<div class="success-message">✅ Analysis complete!</div>';
                 
-                // Display extracted data
                 if (extractedData.success) {
                     dataGrid.innerHTML = `
                         <div class="data-field">
@@ -1564,10 +1837,8 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                         </div>
                     `;
                     
-                    // Store data for adding to tracker
                     resultDiv.dataset.extractedData = JSON.stringify(extractedData.data);
                     
-                    // Detect platform from data
                     if (extractedData.data.platform) {
                         document.getElementById(`platform-${index}`).value = extractedData.data.platform.toLowerCase();
                     }
@@ -1585,7 +1856,6 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 
                 loadingSpinner.style.display = 'none';
                 
-                // Show user-friendly error message
                 if (error.message.includes('401')) {
                     statusDiv.innerHTML = '<div class="error-message">❌ Invalid API key. Please check your OpenAI API key.</div>';
                 } else if (error.message.includes('429')) {
@@ -1600,11 +1870,8 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         
         async function callOpenAIVision(base64Image) {
             if (!userApiKey) {
-                console.error('No API key available');
                 throw new Error('No API key provided');
             }
-            
-            console.log('Using API key for request:', userApiKey ? 'Key available (length: ' + userApiKey.length + ')' : 'No key');
             
             const response = await fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
@@ -1658,18 +1925,14 @@ Look carefully for any numbers related to engagement metrics. Sometimes they may
                 })
             });
             
-            console.log('OpenAI API response status:', response.status);
-            
             if (!response.ok) {
                 const errorData = await response.text();
-                console.error('OpenAI API error details:', errorData);
                 throw new Error(`OpenAI API error: ${response.status} - ${errorData}`);
             }
             
             const result = await response.json();
             const content = result.choices[0].message.content;
             
-            // Parse JSON response
             try {
                 const jsonMatch = content.match(/\{[\s\S]*\}/);
                 if (jsonMatch) {
@@ -1679,7 +1942,6 @@ Look carefully for any numbers related to engagement metrics. Sometimes they may
                 }
             } catch (parseError) {
                 console.error('JSON parse error:', parseError);
-                console.log('Raw response:', content);
                 return {
                     success: false,
                     error: 'Could not parse AI response'
@@ -1704,6 +1966,11 @@ Look carefully for any numbers related to engagement metrics. Sometimes they may
             const extractedData = JSON.parse(resultDiv.dataset.extractedData);
             const platform = document.getElementById(`platform-${index}`).value;
             
+            // Switch to dashboard view if not already there
+            if (currentEntryMethod !== 'dashboard') {
+                switchEntryMethod('dashboard');
+            }
+            
             // Add post to the selected platform
             addPost(platform);
             
@@ -1723,12 +1990,22 @@ Look carefully for any numbers related to engagement metrics. Sometimes they may
                     calculateEngagement(lastPost.querySelector('.post-views'));
                 }
                 
-                // Save the data
+                updatePlatformSummary(platform);
+                
+                // IMPORTANT: Save data immediately after adding AI-extracted data
                 if (currentUser && !initializationError) {
-                    saveData();
+                    saveData().then(() => {
+                        console.log('AI-extracted data saved successfully');
+                    });
                 }
                 
-                alert(`✅ Data added to ${platform.charAt(0).toUpperCase() + platform.slice(1)} tracker!`);
+                alert(`✅ Data added to ${platform.charAt(0).toUpperCase() + platform.slice(1)} dashboard and saved!`);
+                
+                // Optionally hide the analysis result after adding
+                resultDiv.style.opacity = '0.6';
+                const addButton = resultDiv.querySelector('button');
+                addButton.textContent = 'Added ✓';
+                addButton.disabled = true;
             }
         }
 
