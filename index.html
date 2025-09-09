@@ -79,19 +79,6 @@
             margin-bottom: 15px;
         }
         
-        .date-range-display {
-            background: white;
-            border: 2px solid #e2e8f0;
-            border-radius: 6px;
-            padding: 10px 15px;
-            min-width: 250px;
-            font-weight: 500;
-            color: #4a5568;
-            height: 40px;
-            display: flex;
-            align-items: center;
-        }
-        
         .main-section {
             background: #f8f9fa;
             padding: 25px;
@@ -515,12 +502,6 @@
             font-size: 0.9em;
             color: #744210;
         }
-        
-        .date-input-help {
-            font-size: 0.8em;
-            color: #718096;
-            margin-top: 5px;
-        }
 
         @media (max-width: 768px) {
             .date-input-section {
@@ -588,29 +569,17 @@
         <!-- Main App Content (shown when logged in) -->
         <div id="appContent" class="hidden">
             
-            <!-- Date Range Selector -->
+            <!-- Date Range Selector - Simplified to only use date pickers -->
             <div class="date-selector">
                 <h3>📅 Select Date Range</h3>
                 <div class="date-input-section">
-                    <div style="flex: 1; min-width: 250px;">
+                    <div style="flex: 1; min-width: 200px;">
                         <label><strong>Start Date:</strong></label>
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <input type="text" id="startDate" placeholder="2025-01-15, 01/15/2025, January 15, 2025" onchange="updateDateRange()" style="flex: 1;">
-                            <input type="date" id="startDatePicker" onchange="syncDateFromPicker('start')" style="width: 150px;">
-                        </div>
-                        <div class="date-input-help">Enter date in any format or use calendar picker</div>
+                        <input type="date" id="startDatePicker" onchange="updateDateRange()" style="width: 100%;">
                     </div>
-                    <div style="flex: 1; min-width: 250px;">
+                    <div style="flex: 1; min-width: 200px;">
                         <label><strong>End Date:</strong></label>
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <input type="text" id="endDate" placeholder="Leave blank for 7-day range" onchange="updateDateRange()" style="flex: 1;">
-                            <input type="date" id="endDatePicker" onchange="syncDateFromPicker('end')" style="width: 150px;">
-                        </div>
-                        <div class="date-input-help">Leave blank for automatic 7-day range, or enter custom end date</div>
-                    </div>
-                    <div style="flex: 1; min-width: 250px;">
-                        <label><strong>Selected Range:</strong></label>
-                        <div class="date-range-display" id="dateRangeDisplay">Please select start date</div>
+                        <input type="date" id="endDatePicker" onchange="updateDateRange()" style="width: 100%;">
                     </div>
                 </div>
                 <div style="display: flex; gap: 15px; margin-top: 15px; flex-wrap: wrap;">
@@ -787,7 +756,6 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         // Make functions available globally
         window.signInWithGoogle = signInWithGoogle;
         window.signOut = signOut;
-        window.syncDateFromPicker = syncDateFromPicker;
         window.updateDateRange = updateDateRange;
         window.setThisWeek = setThisWeek;
         window.setLastWeek = setLastWeek;
@@ -808,63 +776,6 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         window.saveApiKey = saveApiKey;
         window.clearApiKey = clearApiKey;
         window.validateApiKey = validateApiKey;
-
-        // Date parsing utility function
-        function parseFlexibleDate(input) {
-            if (!input || input.trim() === '') return null;
-            
-            const trimmedInput = input.trim();
-            let dateAttempt;
-            
-            // Try parsing MM/DD/YYYY format specifically first
-            const mmddyyyyMatch = trimmedInput.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-            if (mmddyyyyMatch) {
-                const [, month, day, year] = mmddyyyyMatch;
-                dateAttempt = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-                if (!isNaN(dateAttempt.getTime())) {
-                    return dateAttempt;
-                }
-            }
-            
-            // Try parsing YYYY-MM-DD format specifically
-            const yyyymmddMatch = trimmedInput.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-            if (yyyymmddMatch) {
-                const [, year, month, day] = yyyymmddMatch;
-                dateAttempt = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-                if (!isNaN(dateAttempt.getTime())) {
-                    return dateAttempt;
-                }
-            }
-            
-            // Try direct parsing for natural language dates
-            dateAttempt = new Date(trimmedInput);
-            if (!isNaN(dateAttempt.getTime()) && dateAttempt.getFullYear() > 1900) {
-                return new Date(dateAttempt.getFullYear(), dateAttempt.getMonth(), dateAttempt.getDate());
-            }
-            
-            return null;
-        }
-
-        function formatDateDisplay(date) {
-            if (!date) return '';
-            return date.toLocaleDateString('en-US', { 
-                weekday: 'short', 
-                year: 'numeric', 
-                month: 'short', 
-                day: 'numeric' 
-            });
-        }
-
-        // Date picker sync function
-        function syncDateFromPicker(type) {
-            const picker = document.getElementById(type + 'DatePicker');
-            const textInput = document.getElementById(type + 'Date');
-            
-            if (picker.value) {
-                textInput.value = picker.value;
-                updateDateRange();
-            }
-        }
 
         // Initialize app
         window.addEventListener('load', function() {
@@ -1009,39 +920,20 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             checkApiKeyStatus();
         }
 
-        // Date range functions
+        // Date range functions - SIMPLIFIED
         function updateDateRange() {
-            const startInput = document.getElementById('startDate').value.trim();
-            const endInput = document.getElementById('endDate').value.trim();
-            const displayDiv = document.getElementById('dateRangeDisplay');
+            const startDate = document.getElementById('startDatePicker').value;
+            const endDate = document.getElementById('endDatePicker').value;
             
-            if (!startInput) {
-                displayDiv.textContent = 'Please select start date';
-                return;
+            if (!startDate) return;
+            
+            // Auto-calculate end date if not provided (7 days from start)
+            if (!endDate) {
+                const start = new Date(startDate);
+                const end = new Date(start);
+                end.setDate(start.getDate() + 6);
+                document.getElementById('endDatePicker').value = end.toISOString().split('T')[0];
             }
-            
-            const startDate = parseFlexibleDate(startInput);
-            if (!startDate) {
-                displayDiv.textContent = 'Invalid start date format';
-                return;
-            }
-            
-            let endDate;
-            if (endInput) {
-                endDate = parseFlexibleDate(endInput);
-                if (!endDate) {
-                    displayDiv.textContent = 'Invalid end date format';
-                    return;
-                }
-            } else {
-                // Auto-calculate 7-day range
-                endDate = new Date(startDate);
-                endDate.setDate(startDate.getDate() + 6);
-                document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
-                document.getElementById('endDatePicker').value = endDate.toISOString().split('T')[0];
-            }
-            
-            displayDiv.textContent = `${formatDateDisplay(startDate)} → ${formatDateDisplay(endDate)}`;
             
             // Load data for new date range
             if (currentUser && !initializationError) {
@@ -1057,13 +949,8 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             const sunday = new Date(monday);
             sunday.setDate(monday.getDate() + 6); // Get Sunday
             
-            const startDateStr = monday.toISOString().split('T')[0];
-            const endDateStr = sunday.toISOString().split('T')[0];
-            
-            document.getElementById('startDate').value = startDateStr;
-            document.getElementById('endDate').value = endDateStr;
-            document.getElementById('startDatePicker').value = startDateStr;
-            document.getElementById('endDatePicker').value = endDateStr;
+            document.getElementById('startDatePicker').value = monday.toISOString().split('T')[0];
+            document.getElementById('endDatePicker').value = sunday.toISOString().split('T')[0];
             
             updateDateRange();
         }
@@ -1076,13 +963,8 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             const lastSunday = new Date(lastMonday);
             lastSunday.setDate(lastMonday.getDate() + 6); // Get last Sunday
             
-            const startDateStr = lastMonday.toISOString().split('T')[0];
-            const endDateStr = lastSunday.toISOString().split('T')[0];
-            
-            document.getElementById('startDate').value = startDateStr;
-            document.getElementById('endDate').value = endDateStr;
-            document.getElementById('startDatePicker').value = startDateStr;
-            document.getElementById('endDatePicker').value = endDateStr;
+            document.getElementById('startDatePicker').value = lastMonday.toISOString().split('T')[0];
+            document.getElementById('endDatePicker').value = lastSunday.toISOString().split('T')[0];
             
             updateDateRange();
         }
@@ -1143,6 +1025,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             header.classList.toggle('collapsed');
         }
 
+        // FIXED: Post management functions with proper ID handling and event prevention
         function addPost(platform) {
             postCounter++;
             const container = document.getElementById(platform + '-posts');
@@ -1167,79 +1050,130 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             const postDiv = document.createElement('div');
             postDiv.className = 'post-entry editing';
             postDiv.dataset.postId = postCounter;
-            postDiv.innerHTML = `
-                <div class="post-grid">
-                    <input type="text" placeholder="Post description" class="post-description" onchange="calculateEngagement(this); saveData()">
-                    <select class="post-type" onchange="saveData()">
-                        <option value="">Select type...</option>
-                        <option value="Post">Post</option>
-                        <option value="Reel">Reel</option>
-                        <option value="Story">Story</option>
-                        <option value="Carousel">Carousel</option>
-                        <option value="Video">Video</option>
-                        <option value="Pin">Pin</option>
-                        <option value="Tweet">Tweet</option>
-                        <option value="Other">Other</option>
-                    </select>
-                    <input type="number" placeholder="0" class="post-views" onchange="calculateEngagement(this); saveData()">
-                    <input type="number" placeholder="0" class="post-likes" onchange="calculateEngagement(this); saveData()">
-                    <input type="number" placeholder="0" class="post-comments" onchange="calculateEngagement(this); saveData()">
-                    <input type="number" placeholder="0" class="post-shares" onchange="calculateEngagement(this); saveData()">
-                    <div class="engagement-rate" id="rate-${postCounter}">0%</div>
-                    <div class="post-actions">
-                        <button class="save-btn" onclick="savePost('${platform}', ${postCounter})">Save</button>
-                        <button class="cancel-btn" onclick="removePost(this)">Cancel</button>
-                    </div>
-                </div>
-                <div style="margin-top: 10px;">
-                    <label style="font-size: 12px; color: #718096;">Notes:</label>
-                    <input type="text" placeholder="Additional notes about this post" class="post-notes" style="margin-top: 5px;" onchange="saveData()">
-                </div>
-            `;
+            postDiv.dataset.platform = platform; // Store platform reference
+            postDiv.innerHTML = createPostHTML(postCounter, platform, {
+                description: '',
+                type: '',
+                views: '',
+                likes: '',
+                comments: '',
+                shares: '',
+                notes: ''
+            }, true);
             
             container.appendChild(postDiv);
             updatePlatformSummary(platform);
         }
 
+        function createPostHTML(postId, platform, data, isEditing) {
+            const saveButton = isEditing ? 
+                `<button class="save-btn" onclick="event.stopPropagation(); savePost('${platform}', ${postId})">Save</button>
+                 <button class="cancel-btn" onclick="event.stopPropagation(); removePost(this)">Cancel</button>` :
+                `<button class="edit-btn" onclick="event.stopPropagation(); editPost('${platform}', ${postId})">Edit</button>
+                 <button class="remove-btn" onclick="event.stopPropagation(); removePost(this)">Remove</button>`;
+            
+            return `
+                <div class="post-grid">
+                    <input type="text" placeholder="Post description" class="post-description" value="${data.description || ''}" onchange="calculateEngagement(this); saveData()">
+                    <select class="post-type" onchange="saveData()">
+                        <option value="">Select type...</option>
+                        <option value="Post" ${data.type === 'Post' ? 'selected' : ''}>Post</option>
+                        <option value="Reel" ${data.type === 'Reel' ? 'selected' : ''}>Reel</option>
+                        <option value="Story" ${data.type === 'Story' ? 'selected' : ''}>Story</option>
+                        <option value="Carousel" ${data.type === 'Carousel' ? 'selected' : ''}>Carousel</option>
+                        <option value="Video" ${data.type === 'Video' ? 'selected' : ''}>Video</option>
+                        <option value="Pin" ${data.type === 'Pin' ? 'selected' : ''}>Pin</option>
+                        <option value="Tweet" ${data.type === 'Tweet' ? 'selected' : ''}>Tweet</option>
+                        <option value="Other" ${data.type === 'Other' ? 'selected' : ''}>Other</option>
+                    </select>
+                    <input type="number" placeholder="0" class="post-views" value="${data.views || ''}" onchange="calculateEngagement(this); saveData()">
+                    <input type="number" placeholder="0" class="post-likes" value="${data.likes || ''}" onchange="calculateEngagement(this); saveData()">
+                    <input type="number" placeholder="0" class="post-comments" value="${data.comments || ''}" onchange="calculateEngagement(this); saveData()">
+                    <input type="number" placeholder="0" class="post-shares" value="${data.shares || ''}" onchange="calculateEngagement(this); saveData()">
+                    <div class="engagement-rate" id="rate-${postId}">0%</div>
+                    <div class="post-actions">
+                        ${saveButton}
+                    </div>
+                </div>
+                <div style="margin-top: 10px;">
+                    <label style="font-size: 12px; color: #718096;">Notes:</label>
+                    <input type="text" placeholder="Additional notes about this post" class="post-notes" value="${data.notes || ''}" style="margin-top: 5px;" onchange="saveData()">
+                </div>
+            `;
+        }
+
         function editPost(platform, postId) {
+            console.log('Editing post:', postId, 'on platform:', platform);
+            
+            // Cancel any other edit first
             if (editingPostId !== null && editingPostId !== postId) {
-                cancelEdit(); // Cancel any existing edit
+                cancelEdit();
             }
             
             editingPostId = postId;
             const postDiv = document.querySelector(`[data-post-id="${postId}"]`);
+            
+            if (!postDiv) {
+                console.error('Post not found:', postId);
+                return;
+            }
+            
             postDiv.classList.add('editing');
             
-            // Change edit button to save/cancel buttons
-            const actionsDiv = postDiv.querySelector('.post-actions');
-            actionsDiv.innerHTML = `
-                <button class="save-btn" onclick="savePost('${platform}', ${postId})">Save</button>
-                <button class="cancel-btn" onclick="cancelEdit()">Cancel</button>
-                <button class="remove-btn" onclick="removePost(this)">Remove</button>
-            `;
+            // Collect current data
+            const currentData = {
+                description: postDiv.querySelector('.post-description').value,
+                type: postDiv.querySelector('.post-type').value,
+                views: postDiv.querySelector('.post-views').value,
+                likes: postDiv.querySelector('.post-likes').value,
+                comments: postDiv.querySelector('.post-comments').value,
+                shares: postDiv.querySelector('.post-shares').value,
+                notes: postDiv.querySelector('.post-notes').value
+            };
+            
+            // Replace HTML with editing version
+            postDiv.innerHTML = createPostHTML(postId, platform, currentData, true);
+            
+            // Recalculate engagement
+            calculateEngagement(postDiv.querySelector('.post-views'));
         }
 
         function savePost(platform, postId) {
-            editingPostId = null;
+            console.log('Saving post:', postId, 'on platform:', platform);
+            
             const postDiv = document.querySelector(`[data-post-id="${postId}"]`);
+            if (!postDiv) {
+                console.error('Post not found:', postId);
+                return;
+            }
+            
+            editingPostId = null;
             postDiv.classList.remove('editing');
             
-            // Change buttons back to edit
-            const actionsDiv = postDiv.querySelector('.post-actions');
-            actionsDiv.innerHTML = `
-                <button class="edit-btn" onclick="editPost('${platform}', ${postId})">Edit</button>
-                <button class="remove-btn" onclick="removePost(this)">Remove</button>
-            `;
+            // Collect data
+            const currentData = {
+                description: postDiv.querySelector('.post-description').value,
+                type: postDiv.querySelector('.post-type').value,
+                views: postDiv.querySelector('.post-views').value,
+                likes: postDiv.querySelector('.post-likes').value,
+                comments: postDiv.querySelector('.post-comments').value,
+                shares: postDiv.querySelector('.post-shares').value,
+                notes: postDiv.querySelector('.post-notes').value
+            };
             
-            // Trigger recalculation and save
-            const viewsInput = postDiv.querySelector('.post-views');
-            calculateEngagement(viewsInput);
+            // Replace HTML with non-editing version
+            postDiv.innerHTML = createPostHTML(postId, platform, currentData, false);
+            
+            // Recalculate engagement and update summaries
+            calculateEngagement(postDiv.querySelector('.post-views'));
             updatePlatformSummary(platform);
             
-            // Save data after editing
+            // Save data
             if (currentUser && !initializationError) {
                 saveData().then(() => {
-                    console.log('Manual post saved successfully');
+                    console.log('Post saved successfully');
+                }).catch(error => {
+                    console.error('Save error:', error);
                 });
             }
         }
@@ -1248,28 +1182,27 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             if (editingPostId === null) return;
             
             const postDiv = document.querySelector(`[data-post-id="${editingPostId}"]`);
+            if (!postDiv) return;
+            
+            const platform = postDiv.dataset.platform;
             postDiv.classList.remove('editing');
             
-            // Find platform by looking up the DOM tree
-            const platformSection = postDiv.closest('.platform-section');
-            const platformName = platformSection.querySelector('.platform-header span').textContent;
-            const platform = platformName.toLowerCase().replace(/[^a-z]/g, '');
-            
-            // Change buttons back to edit
-            const actionsDiv = postDiv.querySelector('.post-actions');
-            actionsDiv.innerHTML = `
-                <button class="edit-btn" onclick="editPost('${platform}', ${editingPostId})">Edit</button>
-                <button class="remove-btn" onclick="removePost(this)">Remove</button>
-            `;
-            
+            // Restore to non-editing state - we need to reload the original data
+            // For now, just refresh the display
             editingPostId = null;
+            
+            // Trigger a data reload to restore original state
+            if (currentUser && !initializationError) {
+                loadUserData();
+            }
         }
 
         function removePost(button) {
             const postEntry = button.closest('.post-entry');
-            const platformSection = postEntry.closest('.platform-section');
-            const platformName = platformSection.querySelector('.platform-header span').textContent;
-            const platform = platformName.toLowerCase().replace(/[^a-z]/g, '');
+            const postId = postEntry.dataset.postId;
+            const platform = postEntry.dataset.platform;
+            
+            console.log('Removing post:', postId, 'from platform:', platform);
             
             if (editingPostId && postEntry.dataset.postId == editingPostId) {
                 editingPostId = null;
@@ -1289,7 +1222,11 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             
             // Save data after removing post
             if (currentUser && !initializationError) {
-                saveData();
+                saveData().then(() => {
+                    console.log('Post removal saved successfully');
+                }).catch(error => {
+                    console.error('Save error:', error);
+                });
             }
         }
 
@@ -1319,9 +1256,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 }
             }
             
-            const platformSection = element.closest('.platform-section');
-            const platformName = platformSection.querySelector('.platform-header span').textContent;
-            const platform = platformName.toLowerCase().replace(/[^a-z]/g, '');
+            const platform = postEntry.dataset.platform;
             updatePlatformSummary(platform);
         }
 
@@ -1439,7 +1374,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             `;
         }
 
-        // Data functions - ENHANCED FOR PERSISTENCE
+        // ENHANCED Data functions with better ID management
         async function loadUserData() {
             if (!currentUser || initializationError) return;
 
@@ -1447,7 +1382,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             loadingIndicator.style.display = 'block';
 
             try {
-                const startDate = document.getElementById('startDate').value;
+                const startDate = document.getElementById('startDatePicker').value;
                 if (!startDate) {
                     loadingIndicator.style.display = 'none';
                     return;
@@ -1462,6 +1397,8 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                     populateFormWithData(rangeData);
                 } else {
                     console.log('No data found for date range:', startDate);
+                    // Clear existing data when switching to a new date range
+                    clearAllPlatformPosts();
                 }
 
                 loadingIndicator.style.display = 'none';
@@ -1472,12 +1409,24 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             }
         }
 
+        function clearAllPlatformPosts() {
+            const platforms = ['instagram', 'facebook', 'threads', 'tiktok', 'pinterest'];
+            platforms.forEach(platform => {
+                const container = document.getElementById(platform + '-posts');
+                if (container) {
+                    container.innerHTML = '';
+                }
+                updatePlatformSummary(platform);
+            });
+            postCounter = 0; // Reset counter when clearing
+        }
+
         async function saveData() {
             if (!currentUser || initializationError) return;
 
             try {
                 const rangeData = collectCurrentRangeData();
-                const startDate = document.getElementById('startDate').value;
+                const startDate = document.getElementById('startDatePicker').value;
                 if (!startDate) return;
                 
                 console.log('Saving data for range:', startDate, rangeData);
@@ -1493,8 +1442,8 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
 
         function collectCurrentRangeData() {
             const rangeData = {
-                startDate: document.getElementById('startDate').value,
-                endDate: document.getElementById('endDate').value,
+                startDate: document.getElementById('startDatePicker').value,
+                endDate: document.getElementById('endDatePicker').value,
                 platforms: {},
                 timeInvestment: {
                     creation: parseFloat(document.getElementById('time-creation')?.value) || 0,
@@ -1502,7 +1451,8 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                     engagement: parseFloat(document.getElementById('time-engagement')?.value) || 0,
                     analytics: parseFloat(document.getElementById('time-analytics')?.value) || 0
                 },
-                lastUpdated: new Date().toISOString()
+                lastUpdated: new Date().toISOString(),
+                postCounter: postCounter // Save current post counter
             };
 
             const platforms = ['instagram', 'facebook', 'threads', 'tiktok', 'pinterest'];
@@ -1523,8 +1473,10 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             const postData = [];
 
             posts.forEach(post => {
+                const postId = post.dataset.postId;
                 postData.push({
-                    id: post.dataset.postId,
+                    id: postId,
+                    platform: platform, // Store platform with each post
                     description: post.querySelector('.post-description')?.value || '',
                     type: post.querySelector('.post-type')?.value || '',
                     views: parseInt(post.querySelector('.post-views')?.value) || 0,
@@ -1542,31 +1494,18 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         function populateFormWithData(rangeData) {
             console.log('Populating form with data:', rangeData);
             
-            document.getElementById('startDate').value = rangeData.startDate || '';
-            document.getElementById('endDate').value = rangeData.endDate || '';
+            // Clear existing posts first
+            clearAllPlatformPosts();
             
-            // Sync date pickers
-            if (rangeData.startDate) {
-                document.getElementById('startDatePicker').value = rangeData.startDate;
-            }
-            if (rangeData.endDate) {
-                document.getElementById('endDatePicker').value = rangeData.endDate;
+            // Restore post counter
+            if (rangeData.postCounter) {
+                postCounter = rangeData.postCounter;
             }
             
-            updateDateRange();
-
+            document.getElementById('startDatePicker').value = rangeData.startDate || '';
+            document.getElementById('endDatePicker').value = rangeData.endDate || '';
+            
             const platforms = ['instagram', 'facebook', 'threads', 'tiktok', 'pinterest'];
-            
-            // Clear existing posts but preserve structure
-            platforms.forEach(platform => {
-                const container = document.getElementById(platform + '-posts');
-                if (container) {
-                    container.innerHTML = '';
-                }
-            });
-            
-            // Reset post counter to avoid ID conflicts
-            postCounter = 0;
             
             platforms.forEach(platform => {
                 if (rangeData.platforms?.[platform]?.posts && rangeData.platforms[platform].posts.length > 0) {
@@ -1588,43 +1527,12 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                         container.appendChild(headerDiv);
                         
                         rangeData.platforms[platform].posts.forEach(postData => {
-                            // Use stored ID if available, otherwise increment counter
-                            if (postData.id) {
-                                postCounter = Math.max(postCounter, parseInt(postData.id));
-                            }
-                            
                             const postDiv = document.createElement('div');
                             postDiv.className = 'post-entry';
-                            postDiv.dataset.postId = postData.id || postCounter;
-                            postDiv.innerHTML = `
-                                <div class="post-grid">
-                                    <input type="text" placeholder="Post description" class="post-description" value="${postData.description || ''}" onchange="calculateEngagement(this); saveData()">
-                                    <select class="post-type" onchange="saveData()">
-                                        <option value="">Select type...</option>
-                                        <option value="Post" ${postData.type === 'Post' ? 'selected' : ''}>Post</option>
-                                        <option value="Reel" ${postData.type === 'Reel' ? 'selected' : ''}>Reel</option>
-                                        <option value="Story" ${postData.type === 'Story' ? 'selected' : ''}>Story</option>
-                                        <option value="Carousel" ${postData.type === 'Carousel' ? 'selected' : ''}>Carousel</option>
-                                        <option value="Video" ${postData.type === 'Video' ? 'selected' : ''}>Video</option>
-                                        <option value="Pin" ${postData.type === 'Pin' ? 'selected' : ''}>Pin</option>
-                                        <option value="Tweet" ${postData.type === 'Tweet' ? 'selected' : ''}>Tweet</option>
-                                        <option value="Other" ${postData.type === 'Other' ? 'selected' : ''}>Other</option>
-                                    </select>
-                                    <input type="number" placeholder="0" class="post-views" value="${postData.views || ''}" onchange="calculateEngagement(this); saveData()">
-                                    <input type="number" placeholder="0" class="post-likes" value="${postData.likes || ''}" onchange="calculateEngagement(this); saveData()">
-                                    <input type="number" placeholder="0" class="post-comments" value="${postData.comments || ''}" onchange="calculateEngagement(this); saveData()">
-                                    <input type="number" placeholder="0" class="post-shares" value="${postData.shares || ''}" onchange="calculateEngagement(this); saveData()">
-                                    <div class="engagement-rate">0%</div>
-                                    <div class="post-actions">
-                                        <button class="edit-btn" onclick="editPost('${platform}', ${postData.id || postCounter})">Edit</button>
-                                        <button class="remove-btn" onclick="removePost(this)">Remove</button>
-                                    </div>
-                                </div>
-                                <div style="margin-top: 10px;">
-                                    <label style="font-size: 12px; color: #718096;">Notes:</label>
-                                    <input type="text" placeholder="Additional notes about this post" class="post-notes" value="${postData.notes || ''}" style="margin-top: 5px;" onchange="saveData()">
-                                </div>
-                            `;
+                            postDiv.dataset.postId = postData.id || postCounter++;
+                            postDiv.dataset.platform = platform;
+                            postDiv.innerHTML = createPostHTML(postData.id || postCounter, platform, postData, false);
+                            
                             container.appendChild(postDiv);
                             calculateEngagement(postDiv.querySelector('.post-views'));
                         });
@@ -1769,13 +1677,16 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                     const container = document.getElementById(platform + '-posts');
                     const lastPost = container.lastElementChild;
                     
-                    if (lastPost) {
+                    if (lastPost && lastPost.classList.contains('post-entry')) {
                         lastPost.querySelector('.post-description').value = postType;
                         lastPost.querySelector('.post-views').value = views;
                         lastPost.querySelector('.post-likes').value = likes;
                         lastPost.querySelector('.post-comments').value = comments;
                         lastPost.querySelector('.post-shares').value = shares;
                         calculateEngagement(lastPost.querySelector('.post-views'));
+                        
+                        // Save the post after adding bulk data
+                        savePost(platform, lastPost.dataset.postId);
                     }
                 }
             }
@@ -2099,7 +2010,7 @@ Look carefully for any numbers related to engagement metrics. Sometimes they may
             const container = document.getElementById(platform + '-posts');
             const lastPost = container.lastElementChild;
             
-            if (lastPost && extractedData) {
+            if (lastPost && lastPost.classList.contains('post-entry') && extractedData) {
                 lastPost.querySelector('.post-description').value = extractedData.description || 'AI extracted post';
                 
                 // Set the post type if available
@@ -2141,14 +2052,8 @@ Look carefully for any numbers related to engagement metrics. Sometimes they may
                     calculateEngagement(lastPost.querySelector('.post-views'));
                 }
                 
-                updatePlatformSummary(platform);
-                
-                // IMPORTANT: Save data immediately after adding AI-extracted data
-                if (currentUser && !initializationError) {
-                    saveData().then(() => {
-                        console.log('AI-extracted data saved successfully');
-                    });
-                }
+                // Save the post immediately after adding AI data
+                savePost(platform, lastPost.dataset.postId);
                 
                 alert(`✅ Data added to ${platform.charAt(0).toUpperCase() + platform.slice(1)} dashboard and saved!`);
                 
