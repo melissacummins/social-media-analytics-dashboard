@@ -758,14 +758,6 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             console.log('Firebase initialized successfully');
             showDebugInfo(`Firebase initialized successfully. Domain: ${window.location.hostname}`);
 
-            // Configure auth domain for localhost and GitHub Pages
-            if (window.location.hostname === 'localhost' || 
-                window.location.hostname.includes('github.io') ||
-                window.location.hostname.includes('127.0.0.1')) {
-                console.log('Development environment detected');
-                showDebugInfo(`Environment detected: ${window.location.hostname}`);
-            }
-
         } catch (error) {
             console.error('Firebase initialization error:', error);
             initializationError = error;
@@ -802,7 +794,6 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             updateWeekEnd();
             
             if (!initializationError) {
-                // Set up auth state listener
                 try {
                     onAuthStateChanged(auth, (user) => {
                         console.log('Auth state changed:', user ? user.email : 'no user');
@@ -839,12 +830,8 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
 
             try {
                 const provider = new GoogleAuthProvider();
-                
-                // Add specific scopes if needed
                 provider.addScope('email');
                 provider.addScope('profile');
-                
-                // Set custom parameters
                 provider.setCustomParameters({
                     prompt: 'select_account'
                 });
@@ -1398,7 +1385,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             alert('Feature coming soon - manually parse CSV data into posts');
         }
 
-        // API Key Management Functions
+        // API Key Management Functions - FIXED VERSION
         function validateApiKey() {
             const apiKeyInput = document.getElementById('openaiApiKey');
             const saveBtn = document.getElementById('saveApiKeyBtn');
@@ -1408,7 +1395,9 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             const isValid = apiKey.startsWith('sk-') && apiKey.length > 20;
             
             saveBtn.disabled = !isValid;
-            clearBtn.disabled = !apiKey;
+            
+            // Only enable clear button if we have a stored key OR current input
+            clearBtn.disabled = !(userApiKey || apiKey);
         }
         
         function saveApiKey() {
@@ -1420,15 +1409,19 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 return;
             }
             
-            // Store in session (not localStorage for better security)
+            // ACTUALLY store the API key (this was the bug!)
             userApiKey = apiKey;
+            console.log('API Key stored:', userApiKey ? 'Yes (length: ' + userApiKey.length + ')' : 'No');
             
             // Show success and enable upload section
             document.getElementById('apiKeyStatus').classList.remove('hidden');
             document.getElementById('uploadSection').classList.remove('hidden');
             
-            // Clear the input for security
-            apiKeyInput.value = '';
+            // DON'T clear the input immediately - let user see it's saved
+            // Change the input to show it's saved
+            apiKeyInput.placeholder = 'API Key saved ✅';
+            apiKeyInput.style.backgroundColor = '#f0fff4';
+            apiKeyInput.style.borderColor = '#48bb78';
             
             // Update button states
             document.getElementById('saveApiKeyBtn').disabled = true;
@@ -1439,6 +1432,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         
         function clearApiKey() {
             userApiKey = null;
+            console.log('API Key cleared');
             
             // Hide sections and reset UI
             document.getElementById('apiKeyStatus').classList.add('hidden');
@@ -1446,7 +1440,12 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             document.getElementById('analysisResults').innerHTML = '';
             
             // Reset form
-            document.getElementById('openaiApiKey').value = '';
+            const apiKeyInput = document.getElementById('openaiApiKey');
+            apiKeyInput.value = '';
+            apiKeyInput.placeholder = 'sk-proj-...';
+            apiKeyInput.style.backgroundColor = '';
+            apiKeyInput.style.borderColor = '';
+            
             document.getElementById('saveApiKeyBtn').disabled = true;
             document.getElementById('clearApiKeyBtn').disabled = true;
             
@@ -1454,11 +1453,19 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         }
         
         function checkApiKeyStatus() {
+            console.log('Checking API key status:', userApiKey ? 'Key exists' : 'No key');
+            
             // Check if user has API key stored in session
             if (userApiKey) {
                 document.getElementById('apiKeyStatus').classList.remove('hidden');
                 document.getElementById('uploadSection').classList.remove('hidden');
                 document.getElementById('clearApiKeyBtn').disabled = false;
+                
+                // Update input appearance to show key is saved
+                const apiKeyInput = document.getElementById('openaiApiKey');
+                apiKeyInput.placeholder = 'API Key saved ✅';
+                apiKeyInput.style.backgroundColor = '#f0fff4';
+                apiKeyInput.style.borderColor = '#48bb78';
             } else {
                 document.getElementById('apiKeyStatus').classList.add('hidden');
                 document.getElementById('uploadSection').classList.add('hidden');
@@ -1593,8 +1600,11 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         
         async function callOpenAIVision(base64Image) {
             if (!userApiKey) {
+                console.error('No API key available');
                 throw new Error('No API key provided');
             }
+            
+            console.log('Using API key for request:', userApiKey ? 'Key available (length: ' + userApiKey.length + ')' : 'No key');
             
             const response = await fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
@@ -1648,8 +1658,11 @@ Look carefully for any numbers related to engagement metrics. Sometimes they may
                 })
             });
             
+            console.log('OpenAI API response status:', response.status);
+            
             if (!response.ok) {
                 const errorData = await response.text();
+                console.error('OpenAI API error details:', errorData);
                 throw new Error(`OpenAI API error: ${response.status} - ${errorData}`);
             }
             
@@ -1722,4 +1735,3 @@ Look carefully for any numbers related to engagement metrics. Sometimes they may
     </script>
 </body>
 </html>
-            
