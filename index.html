@@ -283,6 +283,99 @@
             background: #e6fffa;
             color: #234e52;
         }
+        
+        .file-drop-zone {
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        
+        .file-drop-zone:hover {
+            border-color: #667eea;
+            background: #f7fafc;
+        }
+        
+        .analysis-result {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .analysis-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .screenshot-preview {
+            max-width: 200px;
+            max-height: 150px;
+            border-radius: 6px;
+            object-fit: cover;
+        }
+        
+        .extracted-data-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin: 10px 0;
+        }
+        
+        .data-field {
+            background: white;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        
+        .data-label {
+            font-size: 0.8em;
+            color: #718096;
+            margin-bottom: 4px;
+        }
+        
+        .data-value {
+            font-weight: bold;
+            color: #2d3748;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            background: #fed7d7;
+            color: #742a2a;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        
+        .success-message {
+            background: #c6f6d5;
+            color: #22543d;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
     </style>
 </head>
 <body>
@@ -333,6 +426,7 @@
             <div class="input-method-tabs">
                 <button class="tab-button active" onclick="switchTab('manual')">Manual Entry</button>
                 <button class="tab-button" onclick="switchTab('bulk')">Bulk CSV Import</button>
+                <button class="tab-button" onclick="switchTab('screenshot')">🤖 AI Screenshot Analysis</button>
             </div>
             
             <!-- Manual Entry Tab -->
@@ -475,6 +569,34 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 <button onclick="processBulkData()">Process Bulk Data</button>
             </div>
             
+            <!-- AI Screenshot Analysis Tab -->
+            <div id="screenshotTab" class="input-section hidden">
+                <h2>🤖 AI Screenshot Analysis</h2>
+                <p>Upload screenshots of your social media analytics and AI will automatically extract the data!</p>
+                
+                <div style="background: #f0f8ff; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <h4>OpenAI API Key Required</h4>
+                    <p style="margin: 5px 0;">To use AI analysis, you need your own OpenAI API key. <a href="https://platform.openai.com/api-keys" target="_blank">Get one here</a></p>
+                    <p style="margin: 5px 0; font-size: 0.9em; color: #718096;">Your API key will be securely saved to your account and synced across devices.</p>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="password" id="openaiApiKey" placeholder="Enter your OpenAI API key" style="flex: 1;">
+                        <button onclick="saveApiKey()" style="background: #38a169;">Save Key</button>
+                        <button onclick="clearApiKey()" style="background: #e53e3e;">Clear</button>
+                    </div>
+                    <div id="apiKeyStatus" style="margin-top: 10px; font-size: 0.9em;"></div>
+                </div>
+                
+                <div class="file-drop-zone" onclick="document.getElementById('screenshotInput').click()">
+                    <p>📱 Click to upload screenshots</p>
+                    <p style="font-size: 0.9em; color: #718096;">Supports: Instagram, TikTok, Facebook, Threads analytics screenshots</p>
+                    <p style="font-size: 0.8em; color: #a0aec0;">PNG, JPG, JPEG formats</p>
+                </div>
+                <input type="file" id="screenshotInput" accept="image/*" multiple style="display: none;" onchange="analyzeScreenshots(event)">
+                
+                <div id="analysisResults" style="margin-top: 20px;"></div>
+                <div id="extractedData" style="margin-top: 20px;"></div>
+            </div>
+            
             <div class="loading" id="loadingIndicator">Loading your data...</div>
             
             <!-- Weekly Summary -->
@@ -545,6 +667,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         // Global variables
         let currentUser = null;
         let postCounter = 0;
+        let userApiKey = null;
 
         // Initialize app
         window.onload = function() {
@@ -553,6 +676,9 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             monday.setDate(today.getDate() - today.getDay() + 1);
             document.getElementById('weekStart').value = monday.toISOString().split('T')[0];
             updateWeekEnd();
+            
+            // API key will be loaded when user signs in
+            updateApiKeyStatus();
         };
 
         // Authentication functions
@@ -571,6 +697,8 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             try {
                 await firebaseSignOut(auth);
                 console.log('Sign out successful');
+                userApiKey = null;
+                updateApiKeyStatus();
             } catch (error) {
                 console.error('Error signing out:', error);
             }
@@ -623,11 +751,52 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                     populateFormWithData(weekData);
                 }
 
+                // Load user's API key
+                await loadUserApiKey();
+
                 loadingIndicator.style.display = 'none';
             } catch (error) {
                 console.error('Error loading data:', error);
                 loadingIndicator.style.display = 'none';
                 alert('Failed to load your data. Please refresh the page.');
+            }
+        }
+
+        async function loadUserApiKey() {
+            if (!currentUser) return;
+
+            try {
+                const apiKeyRef = doc(db, 'users', currentUser.uid, 'settings', 'apiKeys');
+                const apiKeySnap = await getDoc(apiKeyRef);
+
+                if (apiKeySnap.exists()) {
+                    const data = apiKeySnap.data();
+                    userApiKey = data.openaiApiKey || null;
+                } else {
+                    userApiKey = null;
+                }
+
+                updateApiKeyStatus();
+            } catch (error) {
+                console.error('Error loading API key:', error);
+                userApiKey = null;
+                updateApiKeyStatus();
+            }
+        }
+
+        async function saveUserApiKey() {
+            if (!currentUser || !userApiKey) return;
+
+            try {
+                const apiKeyRef = doc(db, 'users', currentUser.uid, 'settings', 'apiKeys');
+                await setDoc(apiKeyRef, {
+                    openaiApiKey: userApiKey,
+                    lastUpdated: new Date().toISOString()
+                });
+                console.log('API key saved to Firebase');
+            } catch (error) {
+                console.error('Error saving API key:', error);
+                throw error;
             }
         }
 
@@ -736,6 +905,70 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             }
         }
 
+        // API Key Management Functions
+        async function saveApiKey() {
+            if (!currentUser) {
+                alert('Please sign in first to save your API key');
+                return;
+            }
+
+            const keyInput = document.getElementById('openaiApiKey');
+            const key = keyInput.value.trim();
+            
+            if (!key) {
+                alert('Please enter an API key');
+                return;
+            }
+            
+            if (!key.startsWith('sk-')) {
+                alert('OpenAI API keys should start with "sk-"');
+                return;
+            }
+            
+            try {
+                userApiKey = key;
+                await saveUserApiKey();
+                keyInput.value = '';
+                updateApiKeyStatus();
+                alert('API key saved successfully!');
+            } catch (error) {
+                console.error('Error saving API key:', error);
+                alert('Failed to save API key. Please try again.');
+            }
+        }
+        
+        async function clearApiKey() {
+            if (!currentUser) {
+                userApiKey = null;
+                updateApiKeyStatus();
+                return;
+            }
+
+            if (!confirm('Are you sure you want to remove your saved API key?')) {
+                return;
+            }
+
+            try {
+                userApiKey = null;
+                await saveUserApiKey();
+                document.getElementById('openaiApiKey').value = '';
+                updateApiKeyStatus();
+                alert('API key cleared successfully!');
+            } catch (error) {
+                console.error('Error clearing API key:', error);
+                alert('Failed to clear API key. Please try again.');
+            }
+        }
+        
+        function updateApiKeyStatus() {
+            const statusDiv = document.getElementById('apiKeyStatus');
+            if (userApiKey) {
+                statusDiv.innerHTML = '<span style="color: #38a169;">✅ API key saved to your account</span>';
+            } else {
+                statusDiv.innerHTML = '<span style="color: #718096;">ℹ️ Enter your OpenAI API key to enable AI analysis</span>';
+            }
+        }
+
         // UI Functions
         function updateWeekEnd() {
             const startDate = new Date(document.getElementById('weekStart').value);
@@ -751,6 +984,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         function switchTab(tabName) {
             document.getElementById('manualTab').classList.add('hidden');
             document.getElementById('bulkTab').classList.add('hidden');
+            document.getElementById('screenshotTab').classList.add('hidden');
             
             document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
             
@@ -1043,21 +1277,229 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             alert('Bulk CSV import feature - implementation available in full version');
         }
 
-        // Make functions globally available
-        window.signInWithGoogle = signInWithGoogle;
-        window.signOut = signOut;
-        window.updateWeekEnd = updateWeekEnd;
-        window.switchTab = switchTab;
-        window.togglePlatform = togglePlatform;
-        window.addPost = addPost;
-        window.removePost = removePost;
-        window.calculateEngagement = calculateEngagement;
-        window.updateTimeAnalysis = updateTimeAnalysis;
-        window.generateReport = generateReport;
-        window.exportData = exportData;
-        window.processBulkData = processBulkData;
-        window.saveData = saveData;
+        // AI Screenshot Analysis Functions
+        async function analyzeScreenshots(event) {
+            const files = event.target.files;
+            const resultsContainer = document.getElementById('analysisResults');
+            
+            if (files.length === 0) return;
+            
+            // Check if API key is available
+            if (!userApiKey) {
+                alert('Please enter your OpenAI API key first to use AI analysis.');
+                return;
+            }
+            
+            resultsContainer.innerHTML = '<h3>🤖 Analyzing Screenshots...</h3>';
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                await analyzeScreenshot(file, i);
+            }
+        }
+        
+        async function analyzeScreenshot(file, index) {
+            const resultsContainer = document.getElementById('analysisResults');
+            
+            // Create analysis result container
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'analysis-result';
+            resultDiv.innerHTML = `
+                <div class="analysis-header">
+                    <h4>📱 ${file.name}</h4>
+                    <div class="loading-spinner"></div>
+                </div>
+                <img class="screenshot-preview" src="${URL.createObjectURL(file)}" alt="Screenshot preview">
+                <div class="status">Analyzing with AI...</div>
+                <div class="extracted-data-grid" id="data-${index}"></div>
+                <div class="actions" id="actions-${index}" style="display: none;">
+                    <select id="platform-${index}" style="margin-right: 10px;">
+                        <option value="instagram">Instagram</option>
+                        <option value="facebook">Facebook</option>
+                        <option value="threads">Threads</option>
+                        <option value="tiktok">TikTok</option>
+                        <option value="pinterest">Pinterest</option>
+                    </select>
+                    <button onclick="addExtractedDataToTracker(${index})" style="background: #38a169;">Add to Tracker</button>
+                </div>
+            `;
+            resultsContainer.appendChild(resultDiv);
+            
+            try {
+                // Convert image to base64
+                const base64Image = await fileToBase64(file);
+                
+                // Call OpenAI Vision API
+                const extractedData = await callOpenAIVision(base64Image);
+                
+                // Update the result
+                const statusDiv = resultDiv.querySelector('.status');
+                const loadingSpinner = resultDiv.querySelector('.loading-spinner');
+                const dataGrid = document.getElementById(`data-${index}`);
+                const actions = document.getElementById(`actions-${index}`);
+                
+                loadingSpinner.style.display = 'none';
+                statusDiv.innerHTML = '<div class="success-message">✅ Analysis complete!</div>';
+                
+                // Display extracted data
+                if (extractedData.success) {
+                    dataGrid.innerHTML = `
+                        <div class="data-field">
+                            <div class="data-label">Post Type</div>
+                            <div class="data-value">${extractedData.data.postType || 'Unknown'}</div>
+                        </div>
+                        <div class="data-field">
+                            <div class="data-label">Views</div>
+                            <div class="data-value">${extractedData.data.views || 0}</div>
+                        </div>
+                        <div class="data-field">
+                            <div class="data-label">Likes</div>
+                            <div class="data-value">${extractedData.data.likes || 0}</div>
+                        </div>
+                        <div class="data-field">
+                            <div class="data-label">Comments</div>
+                            <div class="data-value">${extractedData.data.comments || 0}</div>
+                        </div>
+                        <div class="data-field">
+                            <div class="data-label">Shares</div>
+                            <div class="data-value">${extractedData.data.shares || 0}</div>
+                        </div>
+                        <div class="data-field">
+                            <div class="data-label">Engagement Rate</div>
+                            <div class="data-value">${extractedData.data.engagementRate || 'Auto-calc'}</div>
+                        </div>
+                    `;
+                    
+                    // Store data for adding to tracker
+                    resultDiv.dataset.extractedData = JSON.stringify(extractedData.data);
+                    
+                    // Detect platform from data
+                    if (extractedData.data.platform) {
+                        document.getElementById(`platform-${index}`).value = extractedData.data.platform.toLowerCase();
+                    }
+                    
+                    actions.style.display = 'block';
+                } else {
+                    statusDiv.innerHTML = '<div class="error-message">❌ Could not extract data. Please try a clearer screenshot or enter manually.</div>';
+                    dataGrid.innerHTML = '<p style="color: #718096; text-align: center;">No data extracted</p>';
+                }
+                
+            } catch (error) {
+                console.error('Analysis error:', error);
+                const statusDiv = resultDiv.querySelector('.status');
+                const loadingSpinner = resultDiv.querySelector('.loading-spinner');
+                
+                loadingSpinner.style.display = 'none';
+                statusDiv.innerHTML = '<div class="error-message">❌ Analysis failed. Please try again or enter data manually.</div>';
+            }
+        }
+        
+        async function callOpenAIVision(base64Image) {
+            if (!userApiKey) {
+                throw new Error('No API key provided');
+            }
+            
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${userApiKey}`
+                },
+                body: JSON.stringify({
+                    model: "gpt-4o",
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                {
+                                    type: "text",
+                                    text: `Please analyze this social media analytics screenshot and extract the following data. Look for metrics like views, likes, comments, shares, engagement rate, etc. 
 
-    </script>
-</body>
-</html>
+Return ONLY a JSON object in this exact format (no other text):
+{
+    "success": true,
+    "data": {
+        "platform": "instagram|facebook|tiktok|threads|pinterest",
+        "postType": "post|reel|story|video|pin",
+        "views": 1234,
+        "likes": 89,
+        "comments": 12,
+        "shares": 5,
+        "engagementRate": "8.48%",
+        "description": "brief description of what this post was about if visible"
+    }
+}
+
+If you cannot extract meaningful data, return:
+{
+    "success": false,
+    "error": "reason why data could not be extracted"
+}
+
+Look carefully for any numbers related to engagement metrics. Sometimes they may be labeled differently (e.g., "reactions" instead of "likes", "reposts" instead of "shares", etc.).`
+                                },
+                                {
+                                    type: "image_url",
+                                    image_url: {
+                                        url: `data:image/jpeg;base64,${base64Image}`
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    max_tokens: 500
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`OpenAI API error: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            const content = result.choices[0].message.content;
+            
+            // Parse JSON response
+            try {
+                const jsonMatch = content.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    return JSON.parse(jsonMatch[0]);
+                } else {
+                    throw new Error('No valid JSON found in response');
+                }
+            } catch (parseError) {
+                console.error('JSON parse error:', parseError);
+                console.log('Raw response:', content);
+                return {
+                    success: false,
+                    error: 'Could not parse AI response'
+                };
+            }
+        }
+        
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => {
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = error => reject(error);
+            });
+        }
+        
+        function addExtractedDataToTracker(index) {
+            const resultDiv = document.querySelector(`#actions-${index}`).closest('.analysis-result');
+            const extractedData = JSON.parse(resultDiv.dataset.extractedData);
+            const platform = document.getElementById(`platform-${index}`).value;
+            
+            // Add post to the selected platform
+            addPost(platform);
+            
+            // Get the last added post and populate it
+            const container = document.getElementById(platform + '-posts');
+            const lastPost = container.lastElementChild;
+            
+            if (lastPost && extractedData) {
+                lastPost.querySelector('.post-description').value = extractedData.description || extractedData.postType || 'AI extracted post';
+                lastPost.querySelector('.post-views').value = extractedData.views || '';
