@@ -526,7 +526,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
         import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-        // Firebase Configuration
+        // Firebase Configuration - CORRECT CONFIG FOR YOUR PROJECT
         const firebaseConfig = {
             apiKey: "AIzaSyA0CipMJUlrp0tFKSE4T-c5a-4yBJpE8xs",
             authDomain: "social-media-dashboard-mc.firebaseapp.com",
@@ -559,16 +559,18 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         async function signInWithGoogle() {
             const provider = new GoogleAuthProvider();
             try {
-                await signInWithPopup(auth, provider);
+                const result = await signInWithPopup(auth, provider);
+                console.log('Sign in successful:', result.user.email);
             } catch (error) {
                 console.error('Error signing in:', error);
-                alert('Failed to sign in. Please try again.');
+                alert('Failed to sign in. Please try again. Error: ' + error.message);
             }
         }
 
         async function signOut() {
             try {
                 await firebaseSignOut(auth);
+                console.log('Sign out successful');
             } catch (error) {
                 console.error('Error signing out:', error);
             }
@@ -578,10 +580,12 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
+                console.log('User signed in:', user.email);
                 showUserSection();
                 loadUserData();
             } else {
                 currentUser = null;
+                console.log('User signed out');
                 showAuthSection();
             }
         });
@@ -635,6 +639,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 const weekKey = document.getElementById('weekStart').value;
                 const docRef = doc(db, 'users', currentUser.uid, 'weeks', weekKey);
                 await setDoc(docRef, weekData);
+                console.log('Data saved successfully');
             } catch (error) {
                 console.error('Error saving data:', error);
             }
