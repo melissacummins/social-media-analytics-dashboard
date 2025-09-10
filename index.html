@@ -658,6 +658,15 @@
             background: #f0f8ff;
             border: 2px solid #667eea;
         }
+
+        .migration-notice {
+            background: #c6f6d5;
+            border: 2px solid #48bb78;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -700,6 +709,12 @@
                 </div>
                 <button onclick="signOut()" style="background: #e53e3e; width: auto; padding: 8px 16px;">Sign Out</button>
             </div>
+        </div>
+
+        <!-- Migration Notice -->
+        <div id="migrationNotice" class="migration-notice hidden">
+            <h3>✅ Data Migration Complete!</h3>
+            <p>Your existing data has been successfully migrated to the new account system and is now available in your "Default Account".</p>
         </div>
 
         <!-- Main App Content (shown when logged in) -->
@@ -806,7 +821,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 <!-- AI Screenshot Analysis Section -->
                 <div id="aiSection" class="entry-section hidden">
                     <div id="apiKeySection" class="api-key-section">
-                        <h3>🔑 OpenAI API Key Setup</h3>
+                        <h3>🔐 OpenAI API Key Setup</h3>
                         <p>To use AI screenshot analysis, enter your OpenAI API key. This key is stored securely in your browser session.</p>
                         
                         <div style="display: flex; gap: 10px; align-items: center; margin: 20px 0;">
@@ -1168,6 +1183,301 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             
             checkApiKeyStatus();
             loadUserAccounts(); // Load user's accounts
+        }
+
+        // ENHANCED Data functions with migration capability
+        async function loadUserData() {
+            if (!currentUser || initializationError) return;
+
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            loadingIndicator.style.display = 'block';
+
+            try {
+                const startDate = document.getElementById('startDatePicker').value;
+                if (!startDate) {
+                    loadingIndicator.style.display = 'none';
+                    return;
+                }
+                
+                // Load data for specific account
+                const docRef = doc(db, 'users', currentUser.uid, 'accounts', currentAccountId, 'dateRanges', startDate);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const rangeData = docSnap.data();
+                    console.log('Loading data for account:', currentAccountId, 'range:', startDate, rangeData);
+                    populateFormWithData(rangeData);
+                } else {
+                    console.log('No data found for account:', currentAccountId, 'date range:', startDate);
+                    
+                    // If this is the default account and no data found, try to migrate old data
+                    if (currentAccountId === 'default') {
+                        const migrated = await migrateOldDataIfExists(startDate);
+                        if (!migrated) {
+                            clearAllPlatformPosts();
+                        }
+                    } else {
+                        clearAllPlatformPosts();
+                    }
+                }
+
+                loadingIndicator.style.display = 'none';
+            } catch (error) {
+                console.error('Error loading data:', error);
+                loadingIndicator.style.display = 'none';
+                showError(`Failed to load data: ${error.message}`);
+            }
+        }
+
+        // Migration function to move old data to default account
+        async function migrateOldDataIfExists(startDate) {
+            try {
+                // Check if data exists in the old location
+                const oldDocRef = doc(db, 'users', currentUser.uid, 'dateRanges', startDate);
+                const oldDocSnap = await getDoc(oldDocRef);
+                
+                if (oldDocSnap.exists()) {
+                    console.log('Found old data, migrating to default account...');
+                    const oldData = oldDocSnap.data();
+                    
+                    // Save to new location (default account)
+                    const newDocRef = doc(db, 'users', currentUser.uid, 'accounts', 'default', 'dateRanges', startDate);
+                    await setDoc(newDocRef, oldData);
+                    
+                    // Delete from old location
+                    await deleteDoc(oldDocRef);
+                    
+                    console.log('Migration completed for date:', startDate);
+                    populateFormWithData(oldData);
+                    
+                    // Show migration notice
+                    showMigrationNotice();
+                    
+                    return true; // Successfully migrated
+                }
+            } catch (error) {
+                console.error('Migration error:', error);
+            }
+            
+            return false; // No migration performed
+        }
+
+        function showMigrationNotice() {
+            const noticeElement = document.getElementById('migrationNotice');
+            noticeElement.classList.remove('hidden');
+            
+            // Auto-hide after 10 seconds
+            setTimeout(() => {
+                noticeElement.classList.add('hidden');
+            }, 10000);
+        }
+
+        // Function to migrate all old data (can be called manually if needed)
+        async function migrateAllOldData() {
+            try {
+                console.log('Checking for old data to migrate...');
+                const oldCollectionRef = collection(db, 'users', currentUser.uid, 'dateRanges');
+                const oldSnapshot = await getDocs(oldCollectionRef);
+                
+                let migratedCount = 0;
+                
+                for (const oldDoc of oldSnapshot.docs) {
+                    const dateId = oldDoc.id;
+                    const oldData = oldDoc.data();
+                    
+                    // Save to new location
+                    const newDocRef = doc(db, 'users', currentUser.uid, 'accounts', 'default', 'dateRanges', dateId);
+                    await setDoc(newDocRef, oldData);
+                    
+                    // Delete from old location
+                    await deleteDoc(oldDoc.ref);
+                    
+                    migratedCount++;
+                    console.log('Migrated date range:', dateId);
+                }
+                
+                if (migratedCount > 0) {
+                    console.log(`Successfully migrated ${migratedCount} date ranges to default account`);
+                    showMigrationNotice();
+                    return migratedCount;
+                }
+            } catch (error) {
+                console.error('Error during full migration:', error);
+            }
+            
+            return 0;
+        }
+
+        function clearAllPlatformPosts() {
+            const platforms = ['instagram', 'facebook', 'threads', 'tiktok', 'pinterest'];
+            platforms.forEach(platform => {
+                const container = document.getElementById(platform + '-posts');
+                if (container) {
+                    container.innerHTML = '';
+                }
+                updatePlatformSummary(platform);
+            });
+            postCounter = 0; // Reset counter when clearing
+        }
+
+        async function saveData() {
+            if (!currentUser || initializationError) return;
+
+            try {
+                const rangeData = collectCurrentRangeData();
+                const startDate = document.getElementById('startDatePicker').value;
+                if (!startDate) return;
+                
+                console.log('Saving data for account:', currentAccountId, 'range:', startDate, rangeData);
+                
+                // Save data for specific account
+                const docRef = doc(db, 'users', currentUser.uid, 'accounts', currentAccountId, 'dateRanges', startDate);
+                await setDoc(docRef, rangeData, { merge: true });
+                console.log('Data saved successfully');
+            } catch (error) {
+                console.error('Error saving data:', error);
+                showError(`Failed to save data: ${error.message}`);
+            }
+        }
+
+        function collectCurrentRangeData() {
+            const rangeData = {
+                startDate: document.getElementById('startDatePicker').value,
+                endDate: document.getElementById('endDatePicker').value,
+                platforms: {},
+                timeInvestment: {
+                    creation: parseFloat(document.getElementById('time-creation')?.value) || 0,
+                    management: parseFloat(document.getElementById('time-management')?.value) || 0,
+                    engagement: parseFloat(document.getElementById('time-engagement')?.value) || 0,
+                    analytics: parseFloat(document.getElementById('time-analytics')?.value) || 0
+                },
+                lastUpdated: new Date().toISOString(),
+                postCounter: postCounter // Save current post counter
+            };
+
+            const platforms = ['instagram', 'facebook', 'threads', 'tiktok', 'pinterest'];
+            platforms.forEach(platform => {
+                rangeData.platforms[platform] = {
+                    posts: collectPostsFromPlatform(platform)
+                };
+            });
+
+            return rangeData;
+        }
+
+        function collectPostsFromPlatform(platform) {
+            const container = document.getElementById(platform + '-posts');
+            if (!container) return [];
+
+            const posts = container.querySelectorAll('.post-entry');
+            const postData = [];
+
+            posts.forEach(post => {
+                const postId = post.dataset.postId;
+                postData.push({
+                    id: postId,
+                    platform: platform, // Store platform with each post
+                    description: post.querySelector('.post-description')?.value || '',
+                    type: post.querySelector('.post-type')?.value || '',
+                    views: parseInt(post.querySelector('.post-views')?.value) || 0,
+                    likes: parseInt(post.querySelector('.post-likes')?.value) || 0,
+                    comments: parseInt(post.querySelector('.post-comments')?.value) || 0,
+                    shares: parseInt(post.querySelector('.post-shares')?.value) || 0,
+                    notes: post.querySelector('.post-notes')?.value || '',
+                    createdAt: new Date().toISOString()
+                });
+            });
+
+            return postData;
+        }
+
+        function populateFormWithData(rangeData) {
+            console.log('Populating form with data:', rangeData);
+            
+            // Clear existing posts first
+            clearAllPlatformPosts();
+            
+            // Restore post counter
+            if (rangeData.postCounter) {
+                postCounter = rangeData.postCounter;
+            }
+            
+            document.getElementById('startDatePicker').value = rangeData.startDate || '';
+            document.getElementById('endDatePicker').value = rangeData.endDate || '';
+            
+            const platforms = ['instagram', 'facebook', 'threads', 'tiktok', 'pinterest'];
+            
+            platforms.forEach(platform => {
+                if (rangeData.platforms?.[platform]?.posts && rangeData.platforms[platform].posts.length > 0) {
+                    const container = document.getElementById(platform + '-posts');
+                    if (container) {
+                        rangeData.platforms[platform].posts.forEach((postData, index) => {
+                            // Add header for each post
+                            const headerDiv = document.createElement('div');
+                            headerDiv.className = 'post-header';
+                            headerDiv.innerHTML = `
+                                <div>Description</div>
+                                <div>Type</div>
+                                <div>Views</div>
+                                <div>Likes</div>
+                                <div>Comments</div>
+                                <div>Shares</div>
+                                <div>Engagement</div>
+                                <div>Actions</div>
+                            `;
+                            container.appendChild(headerDiv);
+                            
+                            // Add the post
+                            const postDiv = document.createElement('div');
+                            postDiv.className = 'post-entry';
+                            postDiv.dataset.postId = postData.id || postCounter++;
+                            postDiv.dataset.platform = platform;
+                            postDiv.innerHTML = createPostHTML(postData.id || postCounter, platform, postData, false);
+                            
+                            container.appendChild(postDiv);
+                            
+                            setTimeout(() => {
+                                calculateEngagement(postDiv.querySelector('.post-views'));
+                            }, 100);
+                        });
+                        
+                        // Add the "Add Another Post" button and summary at the end
+                        const addButton = document.createElement('div');
+                        addButton.className = 'add-post-button';
+                        addButton.innerHTML = `<button onclick="addPost('${platform}')" style="background: #38a169; margin: 20px 0;">+ Add Another Post</button>`;
+                        container.appendChild(addButton);
+                        
+                        const summary = document.createElement('div');
+                        summary.className = 'platform-summary-section';
+                        summary.innerHTML = `
+                            <div style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px;">
+                                <h4>${getPlatformIcon(platform)} Summary</h4>
+                                <div id="${platform}-summary">Add posts to see summary</div>
+                            </div>
+                        `;
+                        container.appendChild(summary);
+                        
+                        updatePlatformSummary(platform);
+                    }
+                }
+            });
+
+            if (rangeData.timeInvestment) {
+                const timeData = rangeData.timeInvestment;
+                if (document.getElementById('time-creation')) {
+                    document.getElementById('time-creation').value = timeData.creation || 0;
+                }
+                if (document.getElementById('time-management')) {
+                    document.getElementById('time-management').value = timeData.management || 0;
+                }
+                if (document.getElementById('time-engagement')) {
+                    document.getElementById('time-engagement').value = timeData.engagement || 0;
+                }
+                if (document.getElementById('time-analytics')) {
+                    document.getElementById('time-analytics').value = timeData.analytics || 0;
+                }
+                updateTimeAnalysis();
+            }
         }
 
         // Date range functions - SIMPLIFIED
@@ -1749,214 +2059,6 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                     <div class="summary-label">Best Post Rate</div>
                 </div>
             `;
-        }
-
-        // ENHANCED Data functions with better ID management
-        async function loadUserData() {
-            if (!currentUser || initializationError) return;
-
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            loadingIndicator.style.display = 'block';
-
-            try {
-                const startDate = document.getElementById('startDatePicker').value;
-                if (!startDate) {
-                    loadingIndicator.style.display = 'none';
-                    return;
-                }
-                
-                // Load data for specific account
-                const docRef = doc(db, 'users', currentUser.uid, 'accounts', currentAccountId, 'dateRanges', startDate);
-                const docSnap = await getDoc(docRef);
-
-                if (docSnap.exists()) {
-                    const rangeData = docSnap.data();
-                    console.log('Loading data for account:', currentAccountId, 'range:', startDate, rangeData);
-                    populateFormWithData(rangeData);
-                } else {
-                    console.log('No data found for account:', currentAccountId, 'date range:', startDate);
-                    // Clear existing data when switching to a new date range or account
-                    clearAllPlatformPosts();
-                }
-
-                loadingIndicator.style.display = 'none';
-            } catch (error) {
-                console.error('Error loading data:', error);
-                loadingIndicator.style.display = 'none';
-                showError(`Failed to load data: ${error.message}`);
-            }
-        }
-
-        function clearAllPlatformPosts() {
-            const platforms = ['instagram', 'facebook', 'threads', 'tiktok', 'pinterest'];
-            platforms.forEach(platform => {
-                const container = document.getElementById(platform + '-posts');
-                if (container) {
-                    container.innerHTML = '';
-                }
-                updatePlatformSummary(platform);
-            });
-            postCounter = 0; // Reset counter when clearing
-        }
-
-        async function saveData() {
-            if (!currentUser || initializationError) return;
-
-            try {
-                const rangeData = collectCurrentRangeData();
-                const startDate = document.getElementById('startDatePicker').value;
-                if (!startDate) return;
-                
-                console.log('Saving data for account:', currentAccountId, 'range:', startDate, rangeData);
-                
-                // Save data for specific account
-                const docRef = doc(db, 'users', currentUser.uid, 'accounts', currentAccountId, 'dateRanges', startDate);
-                await setDoc(docRef, rangeData, { merge: true });
-                console.log('Data saved successfully');
-            } catch (error) {
-                console.error('Error saving data:', error);
-                showError(`Failed to save data: ${error.message}`);
-            }
-        }
-
-        function collectCurrentRangeData() {
-            const rangeData = {
-                startDate: document.getElementById('startDatePicker').value,
-                endDate: document.getElementById('endDatePicker').value,
-                platforms: {},
-                timeInvestment: {
-                    creation: parseFloat(document.getElementById('time-creation')?.value) || 0,
-                    management: parseFloat(document.getElementById('time-management')?.value) || 0,
-                    engagement: parseFloat(document.getElementById('time-engagement')?.value) || 0,
-                    analytics: parseFloat(document.getElementById('time-analytics')?.value) || 0
-                },
-                lastUpdated: new Date().toISOString(),
-                postCounter: postCounter // Save current post counter
-            };
-
-            const platforms = ['instagram', 'facebook', 'threads', 'tiktok', 'pinterest'];
-            platforms.forEach(platform => {
-                rangeData.platforms[platform] = {
-                    posts: collectPostsFromPlatform(platform)
-                };
-            });
-
-            return rangeData;
-        }
-
-        function collectPostsFromPlatform(platform) {
-            const container = document.getElementById(platform + '-posts');
-            if (!container) return [];
-
-            const posts = container.querySelectorAll('.post-entry');
-            const postData = [];
-
-            posts.forEach(post => {
-                const postId = post.dataset.postId;
-                postData.push({
-                    id: postId,
-                    platform: platform, // Store platform with each post
-                    description: post.querySelector('.post-description')?.value || '',
-                    type: post.querySelector('.post-type')?.value || '',
-                    views: parseInt(post.querySelector('.post-views')?.value) || 0,
-                    likes: parseInt(post.querySelector('.post-likes')?.value) || 0,
-                    comments: parseInt(post.querySelector('.post-comments')?.value) || 0,
-                    shares: parseInt(post.querySelector('.post-shares')?.value) || 0,
-                    notes: post.querySelector('.post-notes')?.value || '',
-                    createdAt: new Date().toISOString()
-                });
-            });
-
-            return postData;
-        }
-
-        function populateFormWithData(rangeData) {
-            console.log('Populating form with data:', rangeData);
-            
-            // Clear existing posts first
-            clearAllPlatformPosts();
-            
-            // Restore post counter
-            if (rangeData.postCounter) {
-                postCounter = rangeData.postCounter;
-            }
-            
-            document.getElementById('startDatePicker').value = rangeData.startDate || '';
-            document.getElementById('endDatePicker').value = rangeData.endDate || '';
-            
-            const platforms = ['instagram', 'facebook', 'threads', 'tiktok', 'pinterest'];
-            
-            platforms.forEach(platform => {
-                if (rangeData.platforms?.[platform]?.posts && rangeData.platforms[platform].posts.length > 0) {
-                    const container = document.getElementById(platform + '-posts');
-                    if (container) {
-                        rangeData.platforms[platform].posts.forEach((postData, index) => {
-                            // Add header for each post
-                            const headerDiv = document.createElement('div');
-                            headerDiv.className = 'post-header';
-                            headerDiv.innerHTML = `
-                                <div>Description</div>
-                                <div>Type</div>
-                                <div>Views</div>
-                                <div>Likes</div>
-                                <div>Comments</div>
-                                <div>Shares</div>
-                                <div>Engagement</div>
-                                <div>Actions</div>
-                            `;
-                            container.appendChild(headerDiv);
-                            
-                            // Add the post
-                            const postDiv = document.createElement('div');
-                            postDiv.className = 'post-entry';
-                            postDiv.dataset.postId = postData.id || postCounter++;
-                            postDiv.dataset.platform = platform;
-                            postDiv.innerHTML = createPostHTML(postData.id || postCounter, platform, postData, false);
-                            
-                            container.appendChild(postDiv);
-                            
-                            setTimeout(() => {
-                                calculateEngagement(postDiv.querySelector('.post-views'));
-                            }, 100);
-                        });
-                        
-                        // Add the "Add Another Post" button and summary at the end
-                        const addButton = document.createElement('div');
-                        addButton.className = 'add-post-button';
-                        addButton.innerHTML = `<button onclick="addPost('${platform}')" style="background: #38a169; margin: 20px 0;">+ Add Another Post</button>`;
-                        container.appendChild(addButton);
-                        
-                        const summary = document.createElement('div');
-                        summary.className = 'platform-summary-section';
-                        summary.innerHTML = `
-                            <div style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px;">
-                                <h4>${getPlatformIcon(platform)} Summary</h4>
-                                <div id="${platform}-summary">Add posts to see summary</div>
-                            </div>
-                        `;
-                        container.appendChild(summary);
-                        
-                        updatePlatformSummary(platform);
-                    }
-                }
-            });
-
-            if (rangeData.timeInvestment) {
-                const timeData = rangeData.timeInvestment;
-                if (document.getElementById('time-creation')) {
-                    document.getElementById('time-creation').value = timeData.creation || 0;
-                }
-                if (document.getElementById('time-management')) {
-                    document.getElementById('time-management').value = timeData.management || 0;
-                }
-                if (document.getElementById('time-engagement')) {
-                    document.getElementById('time-engagement').value = timeData.engagement || 0;
-                }
-                if (document.getElementById('time-analytics')) {
-                    document.getElementById('time-analytics').value = timeData.analytics || 0;
-                }
-                updateTimeAnalysis();
-            }
         }
 
         function updateTimeAnalysis() {
