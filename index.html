@@ -737,13 +737,6 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 <div class="summary-grid" id="summaryGrid">
                     <!-- Summary cards will be generated here -->
                 </div>
-                
-                <div class="insights-section">
-                    <h3>🎯 Strategic Insights</h3>
-                    <div id="strategicInsights">
-                        <p><strong>Add posts to generate insights automatically!</strong></p>
-                    </div>
-                </div>
             </div>
             
             <!-- Time Investment -->
@@ -1079,14 +1072,10 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                         <span class="expand-icon">▼</span>
                     </div>
                     <div id="${platform.id}-content" class="platform-content">
-                        <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+                        <div style="margin-bottom: 20px;">
                             <button onclick="addPost('${platform.id}')" style="background: #38a169;">+ Add Post</button>
                         </div>
                         <div id="${platform.id}-posts"></div>
-                        <div style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px;">
-                            <h4>${platform.name} Summary</h4>
-                            <div id="${platform.id}-summary">Add posts to see summary</div>
-                        </div>
                     </div>
                 `;
                 container.appendChild(platformDiv);
@@ -1106,22 +1095,19 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             postCounter++;
             const container = document.getElementById(platform + '-posts');
             
-            // Add header if this is the first post
-            if (container.children.length === 0) {
-                const headerDiv = document.createElement('div');
-                headerDiv.className = 'post-header';
-                headerDiv.innerHTML = `
-                    <div>Description</div>
-                    <div>Type</div>
-                    <div>Views</div>
-                    <div>Likes</div>
-                    <div>Comments</div>
-                    <div>Shares</div>
-                    <div>Engagement</div>
-                    <div>Actions</div>
-                `;
-                container.appendChild(headerDiv);
-            }
+            // Create header for this post (appears above each post)
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'post-header';
+            headerDiv.innerHTML = `
+                <div>Description</div>
+                <div>Type</div>
+                <div>Views</div>
+                <div>Likes</div>
+                <div>Comments</div>
+                <div>Shares</div>
+                <div>Engagement</div>
+                <div>Actions</div>
+            `;
             
             const postDiv = document.createElement('div');
             postDiv.className = 'post-entry editing';
@@ -1129,7 +1115,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             postDiv.dataset.platform = platform; // Store platform reference
             postDiv.innerHTML = createPostHTML(postCounter, platform, {
                 description: '',
-                type: '',
+                type: 'Post', // Default to 'Post'
                 views: '',
                 likes: '',
                 comments: '',
@@ -1137,8 +1123,55 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 notes: ''
             }, true);
             
+            // Find the add button and summary, or add them if they don't exist
+            let addButton = container.querySelector('.add-post-button');
+            let summary = container.querySelector('.platform-summary-section');
+            
+            if (!addButton) {
+                addButton = document.createElement('div');
+                addButton.className = 'add-post-button';
+                addButton.innerHTML = `<button onclick="addPost('${platform}')" style="background: #38a169; margin: 20px 0;">+ Add Another Post</button>`;
+            }
+            
+            if (!summary) {
+                summary = document.createElement('div');
+                summary.className = 'platform-summary-section';
+                summary.innerHTML = `
+                    <div style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px;">
+                        <h4>${getPlatformIcon(platform)} Summary</h4>
+                        <div id="${platform}-summary">Add posts to see summary</div>
+                    </div>
+                `;
+            }
+            
+            // Remove existing add button and summary
+            if (container.querySelector('.add-post-button')) {
+                container.querySelector('.add-post-button').remove();
+            }
+            if (container.querySelector('.platform-summary-section')) {
+                container.querySelector('.platform-summary-section').remove();
+            }
+            
+            // Add header, then post
+            container.appendChild(headerDiv);
             container.appendChild(postDiv);
+            
+            // Add the button after the post, then summary at the end
+            container.appendChild(addButton);
+            container.appendChild(summary);
+            
             updatePlatformSummary(platform);
+        }
+        
+        function getPlatformIcon(platform) {
+            const icons = {
+                'instagram': '📸 Instagram',
+                'facebook': '📘 Facebook', 
+                'threads': '🧵 Threads',
+                'tiktok': '🎵 TikTok',
+                'pinterest': '📌 Pinterest'
+            };
+            return icons[platform] || platform;
         }
 
         function createPostHTML(postId, platform, data, isEditing) {
@@ -1148,19 +1181,21 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 `<button class="edit-btn" onclick="event.stopPropagation(); editPost('${platform}', ${postId})">Edit</button>
                  <button class="remove-btn" onclick="event.stopPropagation(); removePost(this)">Remove</button>`;
             
+            // Ensure type defaults to 'Post' if not specified
+            const defaultType = data.type || 'Post';
+            
             return `
                 <div class="post-grid">
                     <input type="text" placeholder="Post description" class="post-description" value="${data.description || ''}" onchange="calculateEngagement(this); saveData()" ${!isEditing ? 'readonly' : ''}>
                     <select class="post-type" onchange="saveData()" ${!isEditing ? 'disabled' : ''}>
-                        <option value="">Select type...</option>
-                        <option value="Post" ${data.type === 'Post' ? 'selected' : ''}>Post</option>
-                        <option value="Reel" ${data.type === 'Reel' ? 'selected' : ''}>Reel</option>
-                        <option value="Story" ${data.type === 'Story' ? 'selected' : ''}>Story</option>
-                        <option value="Carousel" ${data.type === 'Carousel' ? 'selected' : ''}>Carousel</option>
-                        <option value="Video" ${data.type === 'Video' ? 'selected' : ''}>Video</option>
-                        <option value="Pin" ${data.type === 'Pin' ? 'selected' : ''}>Pin</option>
-                        <option value="Tweet" ${data.type === 'Tweet' ? 'selected' : ''}>Tweet</option>
-                        <option value="Other" ${data.type === 'Other' ? 'selected' : ''}>Other</option>
+                        <option value="Post" ${defaultType === 'Post' ? 'selected' : ''}>Post</option>
+                        <option value="Reel" ${defaultType === 'Reel' ? 'selected' : ''}>Reel</option>
+                        <option value="Story" ${defaultType === 'Story' ? 'selected' : ''}>Story</option>
+                        <option value="Carousel" ${defaultType === 'Carousel' ? 'selected' : ''}>Carousel</option>
+                        <option value="Video" ${defaultType === 'Video' ? 'selected' : ''}>Video</option>
+                        <option value="Pin" ${defaultType === 'Pin' ? 'selected' : ''}>Pin</option>
+                        <option value="Tweet" ${defaultType === 'Tweet' ? 'selected' : ''}>Tweet</option>
+                        <option value="Other" ${defaultType === 'Other' ? 'selected' : ''}>Other</option>
                     </select>
                     <input type="number" placeholder="0" class="post-views" value="${data.views || ''}" onchange="calculateEngagement(this); saveData()" ${!isEditing ? 'readonly' : ''}>
                     <input type="number" placeholder="0" class="post-likes" value="${data.likes || ''}" onchange="calculateEngagement(this); saveData()" ${!isEditing ? 'readonly' : ''}>
@@ -1196,22 +1231,29 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             
             postDiv.classList.add('editing');
             
-            // Collect current data
+            // Collect current data more carefully
             const currentData = {
-                description: postDiv.querySelector('.post-description').value,
-                type: postDiv.querySelector('.post-type').value,
-                views: postDiv.querySelector('.post-views').value,
-                likes: postDiv.querySelector('.post-likes').value,
-                comments: postDiv.querySelector('.post-comments').value,
-                shares: postDiv.querySelector('.post-shares').value,
-                notes: postDiv.querySelector('.post-notes').value
+                description: postDiv.querySelector('.post-description')?.value || '',
+                type: postDiv.querySelector('.post-type')?.value || 'Post',
+                views: postDiv.querySelector('.post-views')?.value || '',
+                likes: postDiv.querySelector('.post-likes')?.value || '',
+                comments: postDiv.querySelector('.post-comments')?.value || '',
+                shares: postDiv.querySelector('.post-shares')?.value || '',
+                notes: postDiv.querySelector('.post-notes')?.value || ''
             };
             
-            // Replace HTML with editing version
+            console.log('Preserving data for edit:', currentData);
+            
+            // Replace HTML with editing version, preserving all data
             postDiv.innerHTML = createPostHTML(postId, platform, currentData, true);
             
             // Recalculate engagement
-            calculateEngagement(postDiv.querySelector('.post-views'));
+            setTimeout(() => {
+                const viewsInput = postDiv.querySelector('.post-views');
+                if (viewsInput) {
+                    calculateEngagement(viewsInput);
+                }
+            }, 100);
         }
 
         function savePost(platform, postId) {
@@ -1226,23 +1268,30 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             editingPostId = null;
             postDiv.classList.remove('editing');
             
-            // Collect data
+            // Collect data more carefully
             const currentData = {
-                description: postDiv.querySelector('.post-description').value,
-                type: postDiv.querySelector('.post-type').value,
-                views: postDiv.querySelector('.post-views').value,
-                likes: postDiv.querySelector('.post-likes').value,
-                comments: postDiv.querySelector('.post-comments').value,
-                shares: postDiv.querySelector('.post-shares').value,
-                notes: postDiv.querySelector('.post-notes').value
+                description: postDiv.querySelector('.post-description')?.value || '',
+                type: postDiv.querySelector('.post-type')?.value || 'Post',
+                views: postDiv.querySelector('.post-views')?.value || '',
+                likes: postDiv.querySelector('.post-likes')?.value || '',
+                comments: postDiv.querySelector('.post-comments')?.value || '',
+                shares: postDiv.querySelector('.post-shares')?.value || '',
+                notes: postDiv.querySelector('.post-notes')?.value || ''
             };
             
-            // Replace HTML with non-editing version
+            console.log('Saving data:', currentData);
+            
+            // Replace HTML with non-editing version, preserving all data
             postDiv.innerHTML = createPostHTML(postId, platform, currentData, false);
             
             // Recalculate engagement and update summaries
-            calculateEngagement(postDiv.querySelector('.post-views'));
-            updatePlatformSummary(platform);
+            setTimeout(() => {
+                const viewsInput = postDiv.querySelector('.post-views');
+                if (viewsInput) {
+                    calculateEngagement(viewsInput);
+                }
+                updatePlatformSummary(platform);
+            }, 100);
             
             // Save data
             if (currentUser && !initializationError) {
@@ -1588,22 +1637,23 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 if (rangeData.platforms?.[platform]?.posts && rangeData.platforms[platform].posts.length > 0) {
                     const container = document.getElementById(platform + '-posts');
                     if (container) {
-                        // Add header first
-                        const headerDiv = document.createElement('div');
-                        headerDiv.className = 'post-header';
-                        headerDiv.innerHTML = `
-                            <div>Description</div>
-                            <div>Type</div>
-                            <div>Views</div>
-                            <div>Likes</div>
-                            <div>Comments</div>
-                            <div>Shares</div>
-                            <div>Engagement</div>
-                            <div>Actions</div>
-                        `;
-                        container.appendChild(headerDiv);
-                        
-                        rangeData.platforms[platform].posts.forEach(postData => {
+                        rangeData.platforms[platform].posts.forEach((postData, index) => {
+                            // Add header for each post
+                            const headerDiv = document.createElement('div');
+                            headerDiv.className = 'post-header';
+                            headerDiv.innerHTML = `
+                                <div>Description</div>
+                                <div>Type</div>
+                                <div>Views</div>
+                                <div>Likes</div>
+                                <div>Comments</div>
+                                <div>Shares</div>
+                                <div>Engagement</div>
+                                <div>Actions</div>
+                            `;
+                            container.appendChild(headerDiv);
+                            
+                            // Add the post
                             const postDiv = document.createElement('div');
                             postDiv.className = 'post-entry';
                             postDiv.dataset.postId = postData.id || postCounter++;
@@ -1611,8 +1661,28 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                             postDiv.innerHTML = createPostHTML(postData.id || postCounter, platform, postData, false);
                             
                             container.appendChild(postDiv);
-                            calculateEngagement(postDiv.querySelector('.post-views'));
+                            
+                            setTimeout(() => {
+                                calculateEngagement(postDiv.querySelector('.post-views'));
+                            }, 100);
                         });
+                        
+                        // Add the "Add Another Post" button and summary at the end
+                        const addButton = document.createElement('div');
+                        addButton.className = 'add-post-button';
+                        addButton.innerHTML = `<button onclick="addPost('${platform}')" style="background: #38a169; margin: 20px 0;">+ Add Another Post</button>`;
+                        container.appendChild(addButton);
+                        
+                        const summary = document.createElement('div');
+                        summary.className = 'platform-summary-section';
+                        summary.innerHTML = `
+                            <div style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px;">
+                                <h4>${getPlatformIcon(platform)} Summary</h4>
+                                <div id="${platform}-summary">Add posts to see summary</div>
+                            </div>
+                        `;
+                        container.appendChild(summary);
+                        
                         updatePlatformSummary(platform);
                     }
                 }
