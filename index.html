@@ -503,6 +503,42 @@
             color: #744210;
         }
 
+        .csv-upload-section {
+            background: #f8f9fa;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .csv-input-methods {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .csv-method {
+            flex: 1;
+            min-width: 200px;
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid #e2e8f0;
+            background: white;
+        }
+        
+        .csv-method:hover {
+            border-color: #667eea;
+        }
+        
+        .csv-method.active {
+            border-color: #667eea;
+            background: #ebf8ff;
+        }
+
         @media (max-width: 768px) {
             .date-input-section {
                 flex-direction: column;
@@ -620,11 +656,35 @@
                 <!-- Bulk Import Section -->
                 <div id="bulkSection" class="entry-section hidden">
                     <h3>📋 Bulk CSV Import</h3>
-                    <p>Paste CSV data with columns: Platform, Post Type, Views, Likes, Comments, Shares, Engagement Rate</p>
-                    <textarea class="bulk-input" id="csvInput" placeholder="Platform,Post Type,Views,Likes,Comments,Shares,Engagement Rate
+                    
+                    <div class="csv-upload-section">
+                        <div class="csv-input-methods">
+                            <div class="csv-method active" onclick="switchCSVMethod('paste')" id="pasteMethod">
+                                <h4>📝 Paste CSV Data</h4>
+                                <p>Copy and paste CSV text</p>
+                            </div>
+                            <div class="csv-method" onclick="switchCSVMethod('upload')" id="uploadMethod">
+                                <h4>📁 Upload CSV File</h4>
+                                <p>Upload a .csv file from computer</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Paste CSV Section -->
+                        <div id="pasteCSVSection">
+                            <p><strong>CSV Format:</strong> Platform, Post Type, Views, Likes, Comments, Shares, Engagement Rate (optional)</p>
+                            <textarea class="bulk-input" id="csvInput" placeholder="Platform,Post Type,Views,Likes,Comments,Shares,Engagement Rate
 Instagram,Reel,1250,89,12,5,8.48%
 Facebook,Post,456,23,8,2,7.24%"></textarea>
-                    <button onclick="processBulkData()">Process Bulk Data</button>
+                            <button onclick="processBulkData()" style="margin-top: 15px;">Process CSV Data</button>
+                        </div>
+                        
+                        <!-- Upload CSV Section -->
+                        <div id="uploadCSVSection" class="hidden">
+                            <p><strong>Upload a CSV file with headers:</strong> Platform, Post Type, Views, Likes, Comments, Shares</p>
+                            <input type="file" id="csvFileInput" accept=".csv" style="margin-bottom: 15px;">
+                            <button onclick="processCSVFile()" style="margin-top: 15px;">Process CSV File</button>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- AI Screenshot Analysis Section -->
@@ -634,7 +694,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                         <p>To use AI screenshot analysis, enter your OpenAI API key. This key is stored securely in your browser session.</p>
                         
                         <div style="display: flex; gap: 10px; align-items: center; margin: 20px 0;">
-                            <input type="password" id="openaiApiKey" placeholder="sk-proj-..." style="flex: 1;" onchange="validateApiKey()">
+                            <input type="password" id="openaiApiKey" placeholder="sk-proj-..." style="flex: 1;" onchange="validateApiKey()" oninput="validateApiKey()">
                             <button onclick="saveApiKey()" id="saveApiKeyBtn" disabled>Save Key</button>
                             <button onclick="clearApiKey()" id="clearApiKeyBtn" style="background: #e53e3e;" disabled>Clear</button>
                         </div>
@@ -729,6 +789,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         let userApiKey = null;
         let currentEntryMethod = 'dashboard';
         let editingPostId = null;
+        let csvInputMethod = 'paste';
 
         try {
             const firebaseConfig = {
@@ -760,6 +821,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         window.setThisWeek = setThisWeek;
         window.setLastWeek = setLastWeek;
         window.switchEntryMethod = switchEntryMethod;
+        window.switchCSVMethod = switchCSVMethod;
         window.togglePlatform = togglePlatform;
         window.addPost = addPost;
         window.editPost = editPost;
@@ -771,11 +833,13 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         window.generateReport = generateReport;
         window.exportData = exportData;
         window.processBulkData = processBulkData;
+        window.processCSVFile = processCSVFile;
         window.analyzeScreenshots = analyzeScreenshots;
         window.addExtractedDataToTracker = addExtractedDataToTracker;
         window.saveApiKey = saveApiKey;
         window.clearApiKey = clearApiKey;
         window.validateApiKey = validateApiKey;
+        window.calculateEngagement = calculateEngagement;
 
         // Initialize app
         window.addEventListener('load', function() {
@@ -982,6 +1046,18 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             document.getElementById('aiSection').classList.toggle('hidden', method !== 'ai');
         }
 
+        function switchCSVMethod(method) {
+            csvInputMethod = method;
+            
+            // Update active method styling
+            document.querySelectorAll('.csv-method').forEach(el => el.classList.remove('active'));
+            document.getElementById(method + 'Method').classList.add('active');
+            
+            // Show/hide sections
+            document.getElementById('pasteCSVSection').classList.toggle('hidden', method !== 'paste');
+            document.getElementById('uploadCSVSection').classList.toggle('hidden', method !== 'upload');
+        }
+
         function initializePlatforms() {
             const platforms = [
                 { id: 'instagram', name: '📸 Instagram', icon: '📸' },
@@ -1068,14 +1144,14 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         function createPostHTML(postId, platform, data, isEditing) {
             const saveButton = isEditing ? 
                 `<button class="save-btn" onclick="event.stopPropagation(); savePost('${platform}', ${postId})">Save</button>
-                 <button class="cancel-btn" onclick="event.stopPropagation(); removePost(this)">Cancel</button>` :
+                 <button class="cancel-btn" onclick="event.stopPropagation(); cancelEdit('${platform}', ${postId})">Cancel</button>` :
                 `<button class="edit-btn" onclick="event.stopPropagation(); editPost('${platform}', ${postId})">Edit</button>
                  <button class="remove-btn" onclick="event.stopPropagation(); removePost(this)">Remove</button>`;
             
             return `
                 <div class="post-grid">
-                    <input type="text" placeholder="Post description" class="post-description" value="${data.description || ''}" onchange="calculateEngagement(this); saveData()">
-                    <select class="post-type" onchange="saveData()">
+                    <input type="text" placeholder="Post description" class="post-description" value="${data.description || ''}" onchange="calculateEngagement(this); saveData()" ${!isEditing ? 'readonly' : ''}>
+                    <select class="post-type" onchange="saveData()" ${!isEditing ? 'disabled' : ''}>
                         <option value="">Select type...</option>
                         <option value="Post" ${data.type === 'Post' ? 'selected' : ''}>Post</option>
                         <option value="Reel" ${data.type === 'Reel' ? 'selected' : ''}>Reel</option>
@@ -1086,10 +1162,10 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                         <option value="Tweet" ${data.type === 'Tweet' ? 'selected' : ''}>Tweet</option>
                         <option value="Other" ${data.type === 'Other' ? 'selected' : ''}>Other</option>
                     </select>
-                    <input type="number" placeholder="0" class="post-views" value="${data.views || ''}" onchange="calculateEngagement(this); saveData()">
-                    <input type="number" placeholder="0" class="post-likes" value="${data.likes || ''}" onchange="calculateEngagement(this); saveData()">
-                    <input type="number" placeholder="0" class="post-comments" value="${data.comments || ''}" onchange="calculateEngagement(this); saveData()">
-                    <input type="number" placeholder="0" class="post-shares" value="${data.shares || ''}" onchange="calculateEngagement(this); saveData()">
+                    <input type="number" placeholder="0" class="post-views" value="${data.views || ''}" onchange="calculateEngagement(this); saveData()" ${!isEditing ? 'readonly' : ''}>
+                    <input type="number" placeholder="0" class="post-likes" value="${data.likes || ''}" onchange="calculateEngagement(this); saveData()" ${!isEditing ? 'readonly' : ''}>
+                    <input type="number" placeholder="0" class="post-comments" value="${data.comments || ''}" onchange="calculateEngagement(this); saveData()" ${!isEditing ? 'readonly' : ''}>
+                    <input type="number" placeholder="0" class="post-shares" value="${data.shares || ''}" onchange="calculateEngagement(this); saveData()" ${!isEditing ? 'readonly' : ''}>
                     <div class="engagement-rate" id="rate-${postId}">0%</div>
                     <div class="post-actions">
                         ${saveButton}
@@ -1097,7 +1173,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 </div>
                 <div style="margin-top: 10px;">
                     <label style="font-size: 12px; color: #718096;">Notes:</label>
-                    <input type="text" placeholder="Additional notes about this post" class="post-notes" value="${data.notes || ''}" style="margin-top: 5px;" onchange="saveData()">
+                    <input type="text" placeholder="Additional notes about this post" class="post-notes" value="${data.notes || ''}" style="margin-top: 5px;" onchange="saveData()" ${!isEditing ? 'readonly' : ''}>
                 </div>
             `;
         }
@@ -1178,17 +1254,18 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             }
         }
 
-        function cancelEdit() {
-            if (editingPostId === null) return;
+        function cancelEdit(platform, postId) {
+            console.log('Cancelling edit for post:', postId);
             
-            const postDiv = document.querySelector(`[data-post-id="${editingPostId}"]`);
+            const postDiv = document.querySelector(`[data-post-id="${postId}"]`);
             if (!postDiv) return;
             
-            const platform = postDiv.dataset.platform;
-            postDiv.classList.remove('editing');
+            // If this is a new post (was created in editing mode), remove it entirely
+            if (editingPostId === postId && postDiv.classList.contains('editing')) {
+                removePost(postDiv.querySelector('.cancel-btn'));
+                return;
+            }
             
-            // Restore to non-editing state - we need to reload the original data
-            // For now, just refresh the display
             editingPostId = null;
             
             // Trigger a data reload to restore original state
@@ -1653,15 +1730,56 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 return;
             }
             
+            processCSVString(csvData, 'paste');
+        }
+
+        function processCSVFile() {
+            const fileInput = document.getElementById('csvFileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a CSV file first');
+                return;
+            }
+            
+            if (!file.name.toLowerCase().endsWith('.csv')) {
+                alert('Please select a valid CSV file');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const csvData = e.target.result;
+                processCSVString(csvData, 'upload');
+            };
+            
+            reader.onerror = function() {
+                alert('Error reading file. Please try again.');
+            };
+            
+            reader.readAsText(file);
+        }
+
+        function processCSVString(csvData, source) {
             const lines = csvData.split('\n');
-            const header = lines[0].toLowerCase();
+            let headerProcessed = false;
+            let addedCount = 0;
             
             // Simple CSV parsing
-            for (let i = 1; i < lines.length; i++) {
+            for (let i = 0; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line) continue;
                 
-                const values = line.split(',');
+                // Skip header row
+                if (!headerProcessed) {
+                    headerProcessed = true;
+                    // Check if this looks like a header
+                    if (line.toLowerCase().includes('platform') || line.toLowerCase().includes('post')) {
+                        continue;
+                    }
+                }
+                
+                const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
                 if (values.length < 6) continue;
                 
                 const platform = values[0].toLowerCase().trim();
@@ -1670,6 +1788,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 const likes = parseInt(values[3]) || 0;
                 const comments = parseInt(values[4]) || 0;
                 const shares = parseInt(values[5]) || 0;
+                const description = values[6] || postType;
                 
                 // Add to appropriate platform
                 if (['instagram', 'facebook', 'threads', 'tiktok', 'pinterest'].includes(platform)) {
@@ -1678,7 +1797,8 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                     const lastPost = container.lastElementChild;
                     
                     if (lastPost && lastPost.classList.contains('post-entry')) {
-                        lastPost.querySelector('.post-description').value = postType;
+                        lastPost.querySelector('.post-description').value = description;
+                        lastPost.querySelector('.post-type').value = postType;
                         lastPost.querySelector('.post-views').value = views;
                         lastPost.querySelector('.post-likes').value = likes;
                         lastPost.querySelector('.post-comments').value = comments;
@@ -1687,24 +1807,36 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                         
                         // Save the post after adding bulk data
                         savePost(platform, lastPost.dataset.postId);
+                        addedCount++;
                     }
                 }
             }
             
-            if (currentUser && !initializationError) {
-                saveData().then(() => {
-                    console.log('Bulk import data saved successfully');
-                    alert('✅ Bulk data imported and saved successfully!');
-                }).catch((error) => {
-                    console.error('Save error:', error);
-                    alert('✅ Bulk data imported successfully! (Note: Save to cloud failed - data exists locally)');
-                });
+            if (addedCount > 0) {
+                if (currentUser && !initializationError) {
+                    saveData().then(() => {
+                        console.log('Bulk import data saved successfully');
+                        alert(`✅ Successfully imported ${addedCount} posts from ${source === 'upload' ? 'file' : 'pasted data'}!`);
+                    }).catch((error) => {
+                        console.error('Save error:', error);
+                        alert(`✅ Successfully imported ${addedCount} posts! (Note: Save to cloud failed - data exists locally)`);
+                    });
+                } else {
+                    alert(`✅ Successfully imported ${addedCount} posts from ${source === 'upload' ? 'file' : 'pasted data'}!`);
+                }
+                
+                // Clear the input
+                if (source === 'paste') {
+                    document.getElementById('csvInput').value = '';
+                } else {
+                    document.getElementById('csvFileInput').value = '';
+                }
             } else {
-                alert('✅ Bulk data imported successfully!');
+                alert('No valid data found in CSV. Please check the format.');
             }
         }
 
-        // API Key Management Functions
+        // API Key Management Functions - FIXED to auto-detect existing keys
         function validateApiKey() {
             const apiKeyInput = document.getElementById('openaiApiKey');
             const saveBtn = document.getElementById('saveApiKeyBtn');
@@ -1715,6 +1847,19 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             
             saveBtn.disabled = !isValid;
             clearBtn.disabled = !(userApiKey || apiKey);
+            
+            // If there's a valid API key in the input and it's not already saved, automatically enable upload
+            if (isValid && !userApiKey) {
+                userApiKey = apiKey;
+                document.getElementById('apiKeyStatus').classList.remove('hidden');
+                document.getElementById('uploadSection').classList.remove('hidden');
+                
+                apiKeyInput.placeholder = 'API Key saved ✅';
+                apiKeyInput.style.backgroundColor = '#f0fff4';
+                apiKeyInput.style.borderColor = '#48bb78';
+                saveBtn.disabled = true;
+                clearBtn.disabled = false;
+            }
         }
         
         function saveApiKey() {
