@@ -1186,8 +1186,8 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             
             return `
                 <div class="post-grid">
-                    <input type="text" placeholder="Post description" class="post-description" value="${data.description || ''}" onchange="calculateEngagement(this); saveData()" ${!isEditing ? 'readonly' : ''}>
-                    <select class="post-type" onchange="saveData()" ${!isEditing ? 'disabled' : ''}>
+                    <input type="text" placeholder="Post description" class="post-description" value="${data.description || ''}" oninput="this.setAttribute('data-temp-value', this.value)" onchange="calculateEngagement(this); saveData()" ${!isEditing ? 'readonly' : ''}>
+                    <select class="post-type" onchange="this.setAttribute('data-temp-value', this.value); saveData()" ${!isEditing ? 'disabled' : ''}>
                         <option value="Post" ${defaultType === 'Post' ? 'selected' : ''}>Post</option>
                         <option value="Reel" ${defaultType === 'Reel' ? 'selected' : ''}>Reel</option>
                         <option value="Story" ${defaultType === 'Story' ? 'selected' : ''}>Story</option>
@@ -1197,10 +1197,10 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                         <option value="Tweet" ${defaultType === 'Tweet' ? 'selected' : ''}>Tweet</option>
                         <option value="Other" ${defaultType === 'Other' ? 'selected' : ''}>Other</option>
                     </select>
-                    <input type="number" placeholder="0" class="post-views" value="${data.views || ''}" onchange="calculateEngagement(this); saveData()" ${!isEditing ? 'readonly' : ''}>
-                    <input type="number" placeholder="0" class="post-likes" value="${data.likes || ''}" onchange="calculateEngagement(this); saveData()" ${!isEditing ? 'readonly' : ''}>
-                    <input type="number" placeholder="0" class="post-comments" value="${data.comments || ''}" onchange="calculateEngagement(this); saveData()" ${!isEditing ? 'readonly' : ''}>
-                    <input type="number" placeholder="0" class="post-shares" value="${data.shares || ''}" onchange="calculateEngagement(this); saveData()" ${!isEditing ? 'readonly' : ''}>
+                    <input type="number" placeholder="0" class="post-views" value="${data.views || ''}" oninput="this.setAttribute('data-temp-value', this.value)" onchange="calculateEngagement(this); saveData()" ${!isEditing ? 'readonly' : ''}>
+                    <input type="number" placeholder="0" class="post-likes" value="${data.likes || ''}" oninput="this.setAttribute('data-temp-value', this.value)" onchange="calculateEngagement(this); saveData()" ${!isEditing ? 'readonly' : ''}>
+                    <input type="number" placeholder="0" class="post-comments" value="${data.comments || ''}" oninput="this.setAttribute('data-temp-value', this.value)" onchange="calculateEngagement(this); saveData()" ${!isEditing ? 'readonly' : ''}>
+                    <input type="number" placeholder="0" class="post-shares" value="${data.shares || ''}" oninput="this.setAttribute('data-temp-value', this.value)" onchange="calculateEngagement(this); saveData()" ${!isEditing ? 'readonly' : ''}>
                     <div class="engagement-rate" id="rate-${postId}">0%</div>
                     <div class="post-actions">
                         ${saveButton}
@@ -1208,7 +1208,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 </div>
                 <div style="margin-top: 10px;">
                     <label style="font-size: 12px; color: #718096;">Notes:</label>
-                    <input type="text" placeholder="Additional notes about this post" class="post-notes" value="${data.notes || ''}" style="margin-top: 5px;" onchange="saveData()" ${!isEditing ? 'readonly' : ''}>
+                    <input type="text" placeholder="Additional notes about this post" class="post-notes" value="${data.notes || ''}" oninput="this.setAttribute('data-temp-value', this.value)" style="margin-top: 5px;" onchange="saveData()" ${!isEditing ? 'readonly' : ''}>
                 </div>
             `;
         }
@@ -1231,15 +1231,23 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             
             postDiv.classList.add('editing');
             
-            // Collect current data more carefully
+            // Collect current data more carefully, using temp values as backup
+            const descriptionEl = postDiv.querySelector('.post-description');
+            const typeEl = postDiv.querySelector('.post-type');
+            const viewsEl = postDiv.querySelector('.post-views');
+            const likesEl = postDiv.querySelector('.post-likes');
+            const commentsEl = postDiv.querySelector('.post-comments');
+            const sharesEl = postDiv.querySelector('.post-shares');
+            const notesEl = postDiv.querySelector('.post-notes');
+            
             const currentData = {
-                description: postDiv.querySelector('.post-description')?.value || '',
-                type: postDiv.querySelector('.post-type')?.value || 'Post',
-                views: postDiv.querySelector('.post-views')?.value || '',
-                likes: postDiv.querySelector('.post-likes')?.value || '',
-                comments: postDiv.querySelector('.post-comments')?.value || '',
-                shares: postDiv.querySelector('.post-shares')?.value || '',
-                notes: postDiv.querySelector('.post-notes')?.value || ''
+                description: descriptionEl?.getAttribute('data-temp-value') || descriptionEl?.value || '',
+                type: typeEl?.getAttribute('data-temp-value') || typeEl?.value || 'Post',
+                views: viewsEl?.getAttribute('data-temp-value') || viewsEl?.value || '',
+                likes: likesEl?.getAttribute('data-temp-value') || likesEl?.value || '',
+                comments: commentsEl?.getAttribute('data-temp-value') || commentsEl?.value || '',
+                shares: sharesEl?.getAttribute('data-temp-value') || sharesEl?.value || '',
+                notes: notesEl?.getAttribute('data-temp-value') || notesEl?.value || ''
             };
             
             console.log('Preserving data for edit:', currentData);
@@ -1247,11 +1255,27 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             // Replace HTML with editing version, preserving all data
             postDiv.innerHTML = createPostHTML(postId, platform, currentData, true);
             
-            // Recalculate engagement
+            // Set the temp attributes to preserve the data
             setTimeout(() => {
-                const viewsInput = postDiv.querySelector('.post-views');
-                if (viewsInput) {
-                    calculateEngagement(viewsInput);
+                const newDescriptionEl = postDiv.querySelector('.post-description');
+                const newTypeEl = postDiv.querySelector('.post-type');
+                const newViewsEl = postDiv.querySelector('.post-views');
+                const newLikesEl = postDiv.querySelector('.post-likes');
+                const newCommentsEl = postDiv.querySelector('.post-comments');
+                const newSharesEl = postDiv.querySelector('.post-shares');
+                const newNotesEl = postDiv.querySelector('.post-notes');
+                
+                if (newDescriptionEl) newDescriptionEl.setAttribute('data-temp-value', currentData.description);
+                if (newTypeEl) newTypeEl.setAttribute('data-temp-value', currentData.type);
+                if (newViewsEl) newViewsEl.setAttribute('data-temp-value', currentData.views);
+                if (newLikesEl) newLikesEl.setAttribute('data-temp-value', currentData.likes);
+                if (newCommentsEl) newCommentsEl.setAttribute('data-temp-value', currentData.comments);
+                if (newSharesEl) newSharesEl.setAttribute('data-temp-value', currentData.shares);
+                if (newNotesEl) newNotesEl.setAttribute('data-temp-value', currentData.notes);
+                
+                // Recalculate engagement
+                if (newViewsEl) {
+                    calculateEngagement(newViewsEl);
                 }
             }, 100);
         }
@@ -1268,15 +1292,23 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             editingPostId = null;
             postDiv.classList.remove('editing');
             
-            // Collect data more carefully
+            // Collect data more carefully, using temp values as backup
+            const descriptionEl = postDiv.querySelector('.post-description');
+            const typeEl = postDiv.querySelector('.post-type');
+            const viewsEl = postDiv.querySelector('.post-views');
+            const likesEl = postDiv.querySelector('.post-likes');
+            const commentsEl = postDiv.querySelector('.post-comments');
+            const sharesEl = postDiv.querySelector('.post-shares');
+            const notesEl = postDiv.querySelector('.post-notes');
+            
             const currentData = {
-                description: postDiv.querySelector('.post-description')?.value || '',
-                type: postDiv.querySelector('.post-type')?.value || 'Post',
-                views: postDiv.querySelector('.post-views')?.value || '',
-                likes: postDiv.querySelector('.post-likes')?.value || '',
-                comments: postDiv.querySelector('.post-comments')?.value || '',
-                shares: postDiv.querySelector('.post-shares')?.value || '',
-                notes: postDiv.querySelector('.post-notes')?.value || ''
+                description: descriptionEl?.getAttribute('data-temp-value') || descriptionEl?.value || '',
+                type: typeEl?.getAttribute('data-temp-value') || typeEl?.value || 'Post',
+                views: viewsEl?.getAttribute('data-temp-value') || viewsEl?.value || '',
+                likes: likesEl?.getAttribute('data-temp-value') || likesEl?.value || '',
+                comments: commentsEl?.getAttribute('data-temp-value') || commentsEl?.value || '',
+                shares: sharesEl?.getAttribute('data-temp-value') || sharesEl?.value || '',
+                notes: notesEl?.getAttribute('data-temp-value') || notesEl?.value || ''
             };
             
             console.log('Saving data:', currentData);
@@ -1284,11 +1316,27 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             // Replace HTML with non-editing version, preserving all data
             postDiv.innerHTML = createPostHTML(postId, platform, currentData, false);
             
-            // Recalculate engagement and update summaries
+            // Set temp attributes on the new elements too
             setTimeout(() => {
-                const viewsInput = postDiv.querySelector('.post-views');
-                if (viewsInput) {
-                    calculateEngagement(viewsInput);
+                const newDescriptionEl = postDiv.querySelector('.post-description');
+                const newTypeEl = postDiv.querySelector('.post-type');
+                const newViewsEl = postDiv.querySelector('.post-views');
+                const newLikesEl = postDiv.querySelector('.post-likes');
+                const newCommentsEl = postDiv.querySelector('.post-comments');
+                const newSharesEl = postDiv.querySelector('.post-shares');
+                const newNotesEl = postDiv.querySelector('.post-notes');
+                
+                if (newDescriptionEl) newDescriptionEl.setAttribute('data-temp-value', currentData.description);
+                if (newTypeEl) newTypeEl.setAttribute('data-temp-value', currentData.type);
+                if (newViewsEl) newViewsEl.setAttribute('data-temp-value', currentData.views);
+                if (newLikesEl) newLikesEl.setAttribute('data-temp-value', currentData.likes);
+                if (newCommentsEl) newCommentsEl.setAttribute('data-temp-value', currentData.comments);
+                if (newSharesEl) newSharesEl.setAttribute('data-temp-value', currentData.shares);
+                if (newNotesEl) newNotesEl.setAttribute('data-temp-value', currentData.notes);
+                
+                // Recalculate engagement and update summaries
+                if (newViewsEl) {
+                    calculateEngagement(newViewsEl);
                 }
                 updatePlatformSummary(platform);
             }, 100);
@@ -1334,14 +1382,24 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 editingPostId = null;
             }
             
+            // Find and remove the associated header (the one directly before this post)
+            const postHeader = postEntry.previousElementSibling;
+            if (postHeader && postHeader.classList.contains('post-header')) {
+                postHeader.remove();
+            }
+            
+            // Remove the post
             postEntry.remove();
             
-            // Remove header if no posts left
             const container = document.getElementById(platform + '-posts');
             const remainingPosts = container.querySelectorAll('.post-entry');
+            
+            // If no posts left, remove the add button and summary too
             if (remainingPosts.length === 0) {
-                const header = container.querySelector('.post-header');
-                if (header) header.remove();
+                const addButton = container.querySelector('.add-post-button');
+                const summary = container.querySelector('.platform-summary-section');
+                if (addButton) addButton.remove();
+                if (summary) summary.remove();
             }
             
             updatePlatformSummary(platform);
