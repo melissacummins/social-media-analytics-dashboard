@@ -821,7 +821,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 <!-- AI Screenshot Analysis Section -->
                 <div id="aiSection" class="entry-section hidden">
                     <div id="apiKeySection" class="api-key-section">
-                        <h3>🔐 OpenAI API Key Setup</h3>
+                        <h3>🔑 OpenAI API Key Setup</h3>
                         <p>To use AI screenshot analysis, enter your OpenAI API key. This key is stored securely in your browser session.</p>
                         
                         <div style="display: flex; gap: 10px; align-items: center; margin: 20px 0;">
@@ -1947,6 +1947,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             updatePlatformSummary(platform);
         }
 
+        // FIXED: Platform summary function with corrected worst post logic
         function updatePlatformSummary(platform) {
             const container = document.getElementById(platform + '-posts');
             const posts = container.querySelectorAll('.post-entry');
@@ -1955,7 +1956,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             let totalViews = 0;
             let engagementRates = [];
             let bestPost = { rate: 0, description: '' };
-            let worstPost = { rate: 100, description: '' };
+            let worstPost = { rate: Infinity, description: '' };
             
             posts.forEach(post => {
                 const views = parseFloat(post.querySelector('.post-views').value) || 0;
@@ -1966,16 +1967,18 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 
                 totalViews += views;
                 
-                if (views > 0) {
-                    const rate = ((likes + comments + shares) / views) * 100;
-                    engagementRates.push(rate);
-                    
-                    if (rate > bestPost.rate) {
-                        bestPost = { rate, description };
-                    }
-                    if (rate < worstPost.rate && engagementRates.length > 1) {
-                        worstPost = { rate, description };
-                    }
+                // Calculate engagement rate for all posts (0% if no views)
+                const rate = views > 0 ? ((likes + comments + shares) / views) * 100 : 0;
+                engagementRates.push(rate);
+                
+                // Track best post
+                if (rate > bestPost.rate) {
+                    bestPost = { rate, description };
+                }
+                
+                // Track worst post (always, as long as we have posts)
+                if (rate < worstPost.rate) {
+                    worstPost = { rate, description };
                 }
             });
             
@@ -1993,7 +1996,8 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 summaryHTML += `<strong>Best Post:</strong> ${bestPost.description} (${bestPost.rate.toFixed(2)}%)<br>`;
             }
             
-            if (worstPost.rate < 100 && worstPost.rate !== bestPost.rate && engagementRates.length > 1) {
+            // Show worst post if we have multiple posts and the worst is different from the best
+            if (totalPosts > 1 && worstPost.rate !== bestPost.rate && worstPost.rate < Infinity) {
                 summaryHTML += `<strong>Worst Post:</strong> ${worstPost.description} (${worstPost.rate.toFixed(2)}%)<br>`;
             }
             
