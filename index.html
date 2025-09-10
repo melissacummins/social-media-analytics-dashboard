@@ -558,6 +558,106 @@
                 justify-content: center;
             }
         }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+            color: #2d3748;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #718096;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-close:hover {
+            color: #2d3748;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            padding: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .account-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .account-info h4 {
+            margin: 0 0 5px 0;
+            color: #2d3748;
+        }
+        
+        .account-info p {
+            margin: 0;
+            color: #718096;
+            font-size: 14px;
+        }
+        
+        .account-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .account-actions button {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        
+        .current-account {
+            background: #f0f8ff;
+            border: 2px solid #667eea;
+        }
     </style>
 </head>
 <body>
@@ -604,6 +704,22 @@
 
         <!-- Main App Content (shown when logged in) -->
         <div id="appContent" class="hidden">
+            
+            <!-- Account Management Section -->
+            <div class="main-section">
+                <h2>👥 Account Management</h2>
+                <div style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;">
+                    <select id="currentAccountSelect" onchange="switchAccount()" style="flex: 1; min-width: 200px;">
+                        <option value="default">Default Account</option>
+                    </select>
+                    <button onclick="showCreateAccountModal()" style="background: #38a169; white-space: nowrap;">+ Add New Account</button>
+                    <button onclick="showManageAccountsModal()" style="background: #3182ce; white-space: nowrap;">Manage Accounts</button>
+                </div>
+                <div id="currentAccountInfo" style="background: #f0f8ff; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <strong>Current Account:</strong> <span id="currentAccountName">Default Account</span>
+                    <span id="currentAccountDescription" style="margin-left: 15px; color: #718096;"></span>
+                </div>
+            </div>
             
             <!-- Date Range Selector - Simplified to only use date pickers -->
             <div class="date-selector">
@@ -765,6 +881,59 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 </div>
             </div>
         </div>
+        
+        <!-- Account Creation Modal -->
+        <div id="accountModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modalTitle">Create New Account</h3>
+                    <button class="modal-close" onclick="closeAccountModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div style="margin-bottom: 15px;">
+                        <label for="accountName"><strong>Account Name:</strong></label>
+                        <input type="text" id="accountName" placeholder="e.g., My TikTok Account, PA's TikTok Account" style="width: 100%; margin-top: 5px;">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label for="accountDescription"><strong>Description (Optional):</strong></label>
+                        <input type="text" id="accountDescription" placeholder="e.g., Personal account, Assistant managed account" style="width: 100%; margin-top: 5px;">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label for="accountColor"><strong>Color Theme:</strong></label>
+                        <select id="accountColor" style="width: 100%; margin-top: 5px;">
+                            <option value="#667eea">Blue (Default)</option>
+                            <option value="#38a169">Green</option>
+                            <option value="#d69e2e">Orange</option>
+                            <option value="#9f7aea">Purple</option>
+                            <option value="#ed64a6">Pink</option>
+                            <option value="#e53e3e">Red</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button onclick="closeAccountModal()" style="background: #718096;">Cancel</button>
+                    <button onclick="saveAccount()" id="saveAccountBtn" style="background: #38a169;">Create Account</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Account Management Modal -->
+        <div id="manageModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Manage Accounts</h3>
+                    <button class="modal-close" onclick="closeManageModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="accountsList">
+                        <!-- Account list will be populated here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button onclick="closeManageModal()" style="background: #718096;">Close</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Firebase SDK -->
@@ -772,7 +941,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         // Import Firebase modules
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-        import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+        import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
         // Global variables
         let app, auth, db;
@@ -783,6 +952,19 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         let currentEntryMethod = 'dashboard';
         let editingPostId = null;
         let csvInputMethod = 'paste';
+        
+        // Account management variables
+        let currentAccountId = 'default';
+        let userAccounts = {
+            'default': {
+                id: 'default',
+                name: 'Default Account',
+                description: '',
+                color: '#667eea',
+                createdAt: new Date().toISOString()
+            }
+        };
+        let editingAccountId = null;
 
         try {
             const firebaseConfig = {
@@ -833,6 +1015,16 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
         window.clearApiKey = clearApiKey;
         window.validateApiKey = validateApiKey;
         window.calculateEngagement = calculateEngagement;
+        
+        // Account management functions
+        window.switchAccount = switchAccount;
+        window.showCreateAccountModal = showCreateAccountModal;
+        window.showManageAccountsModal = showManageAccountsModal;
+        window.closeAccountModal = closeAccountModal;
+        window.closeManageModal = closeManageModal;
+        window.saveAccount = saveAccount;
+        window.editAccount = editAccount;
+        window.deleteAccount = deleteAccount;
 
         // Initialize app
         window.addEventListener('load', function() {
@@ -975,6 +1167,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             document.getElementById('debugInfo').classList.add('hidden');
             
             checkApiKeyStatus();
+            loadUserAccounts(); // Load user's accounts
         }
 
         // Date range functions - SIMPLIFIED
@@ -1572,16 +1765,17 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                     return;
                 }
                 
-                const docRef = doc(db, 'users', currentUser.uid, 'dateRanges', startDate);
+                // Load data for specific account
+                const docRef = doc(db, 'users', currentUser.uid, 'accounts', currentAccountId, 'dateRanges', startDate);
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {
                     const rangeData = docSnap.data();
-                    console.log('Loading data for range:', startDate, rangeData);
+                    console.log('Loading data for account:', currentAccountId, 'range:', startDate, rangeData);
                     populateFormWithData(rangeData);
                 } else {
-                    console.log('No data found for date range:', startDate);
-                    // Clear existing data when switching to a new date range
+                    console.log('No data found for account:', currentAccountId, 'date range:', startDate);
+                    // Clear existing data when switching to a new date range or account
                     clearAllPlatformPosts();
                 }
 
@@ -1613,9 +1807,10 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 const startDate = document.getElementById('startDatePicker').value;
                 if (!startDate) return;
                 
-                console.log('Saving data for range:', startDate, rangeData);
+                console.log('Saving data for account:', currentAccountId, 'range:', startDate, rangeData);
                 
-                const docRef = doc(db, 'users', currentUser.uid, 'dateRanges', startDate);
+                // Save data for specific account
+                const docRef = doc(db, 'users', currentUser.uid, 'accounts', currentAccountId, 'dateRanges', startDate);
                 await setDoc(docRef, rangeData, { merge: true });
                 console.log('Data saved successfully');
             } catch (error) {
@@ -2267,6 +2462,300 @@ Look carefully for any numbers related to engagement metrics. Sometimes they may
         }
         
         function addExtractedDataToTracker(index) {
+            const resultDiv = document.querySelector(`#actions-${index}`).closest('.analysis-result');
+            const extractedData = JSON.parse(resultDiv.dataset.extractedData);
+            const platform = document.getElementById(`platform-${index}`).value;
+            
+            // Switch to dashboard view if not already there
+            if (currentEntryMethod !== 'dashboard') {
+                switchEntryMethod('dashboard');
+            }
+            
+            // Add post to the selected platform (this creates it in editing mode)
+            addPost(platform);
+            
+            // Get the last added post and populate it
+            const container = document.getElementById(platform + '-posts');
+            const lastPost = container.lastElementChild.previousElementSibling; // Get post before add button
+            
+            if (lastPost && lastPost.classList.contains('post-entry') && extractedData) {
+                lastPost.querySelector('.post-description').value = extractedData.description || 'AI extracted post';
+                
+                // Set the post type if available
+                const typeSelect = lastPost.querySelector('.post-type');
+                if (extractedData.postType && typeSelect) {
+                    // Map common types to our dropdown options
+                    const typeMap = {
+                        'reel': 'Reel',
+                        'post': 'Post', 
+                        'story': 'Story',
+                        'carousel': 'Carousel',
+                        'video': 'Video',
+                        'pin': 'Pin',
+                        'tweet': 'Tweet'
+                    };
+                    const mappedType = typeMap[extractedData.postType.toLowerCase()] || extractedData.postType;
+                    
+                    // Find matching option
+                    for (let option of typeSelect.options) {
+                        if (option.value.toLowerCase() === mappedType.toLowerCase()) {
+                            option.selected = true;
+                            break;
+                        }
+                    }
+                    
+                    // If no match found, use "Other"
+                    if (typeSelect.value === '') {
+                        typeSelect.value = 'Other';
+                    }
+                }
+                
+                lastPost.querySelector('.post-views').value = extractedData.views || '';
+                lastPost.querySelector('.post-likes').value = extractedData.likes || '';
+                lastPost.querySelector('.post-comments').value = extractedData.comments || '';
+                lastPost.querySelector('.post-shares').value = extractedData.shares || '';
+                
+                // Calculate engagement rate if we have views
+                if (extractedData.views > 0) {
+                    calculateEngagement(lastPost.querySelector('.post-views'));
+                }
+                
+                // Save the post immediately after adding AI data
+                savePost(platform, lastPost.dataset.postId);
+                
+                alert(`✅ Data added to ${platform.charAt(0).toUpperCase() + platform.slice(1)} dashboard and saved!`);
+                
+                // Optionally hide the analysis result after adding
+                resultDiv.style.opacity = '0.6';
+                const addButton = resultDiv.querySelector('button');
+                addButton.textContent = 'Added ✓';
+                addButton.disabled = true;
+            }
+        }
+        
+        // Account Management Functions
+        function switchAccount() {
+            const selectedAccountId = document.getElementById('currentAccountSelect').value;
+            if (selectedAccountId !== currentAccountId) {
+                currentAccountId = selectedAccountId;
+                updateCurrentAccountDisplay();
+                loadUserData(); // Reload data for the new account
+            }
+        }
+        
+        function updateCurrentAccountDisplay() {
+            const account = userAccounts[currentAccountId];
+            document.getElementById('currentAccountName').textContent = account.name;
+            document.getElementById('currentAccountDescription').textContent = account.description || '';
+            
+            // Update theme color if needed
+            const root = document.documentElement;
+            root.style.setProperty('--account-color', account.color);
+        }
+        
+        function showCreateAccountModal() {
+            editingAccountId = null;
+            document.getElementById('modalTitle').textContent = 'Create New Account';
+            document.getElementById('accountName').value = '';
+            document.getElementById('accountDescription').value = '';
+            document.getElementById('accountColor').value = '#667eea';
+            document.getElementById('saveAccountBtn').textContent = 'Create Account';
+            document.getElementById('accountModal').classList.remove('hidden');
+            document.getElementById('accountModal').style.display = 'block';
+        }
+        
+        function showManageAccountsModal() {
+            populateAccountsList();
+            document.getElementById('manageModal').classList.remove('hidden');
+            document.getElementById('manageModal').style.display = 'block';
+        }
+        
+        function closeAccountModal() {
+            document.getElementById('accountModal').classList.add('hidden');
+            document.getElementById('accountModal').style.display = 'none';
+            editingAccountId = null;
+        }
+        
+        function closeManageModal() {
+            document.getElementById('manageModal').classList.add('hidden');
+            document.getElementById('manageModal').style.display = 'none';
+        }
+        
+        async function saveAccount() {
+            const name = document.getElementById('accountName').value.trim();
+            const description = document.getElementById('accountDescription').value.trim();
+            const color = document.getElementById('accountColor').value;
+            
+            if (!name) {
+                alert('Please enter an account name');
+                return;
+            }
+            
+            if (editingAccountId) {
+                // Editing existing account
+                userAccounts[editingAccountId].name = name;
+                userAccounts[editingAccountId].description = description;
+                userAccounts[editingAccountId].color = color;
+            } else {
+                // Creating new account
+                const accountId = 'account_' + Date.now();
+                userAccounts[accountId] = {
+                    id: accountId,
+                    name: name,
+                    description: description,
+                    color: color,
+                    createdAt: new Date().toISOString()
+                };
+                
+                // Switch to the new account
+                currentAccountId = accountId;
+            }
+            
+            // Update the dropdown
+            populateAccountsDropdown();
+            updateCurrentAccountDisplay();
+            
+            // Save to Firebase
+            if (currentUser && !initializationError) {
+                await saveUserAccounts();
+            }
+            
+            closeAccountModal();
+            alert(editingAccountId ? 'Account updated successfully!' : 'Account created successfully!');
+        }
+        
+        function editAccount(accountId) {
+            if (accountId === 'default') return; // Can't edit default account
+            
+            editingAccountId = accountId;
+            const account = userAccounts[accountId];
+            
+            document.getElementById('modalTitle').textContent = 'Edit Account';
+            document.getElementById('accountName').value = account.name;
+            document.getElementById('accountDescription').value = account.description || '';
+            document.getElementById('accountColor').value = account.color;
+            document.getElementById('saveAccountBtn').textContent = 'Update Account';
+            document.getElementById('accountModal').classList.remove('hidden');
+            document.getElementById('accountModal').style.display = 'block';
+        }
+        
+        async function deleteAccount(accountId) {
+            if (accountId === 'default') {
+                alert('Cannot delete the default account');
+                return;
+            }
+            
+            if (!confirm(`Are you sure you want to delete "${userAccounts[accountId].name}"? This will also delete all data associated with this account.`)) {
+                return;
+            }
+            
+            // If deleting current account, switch to default
+            if (currentAccountId === accountId) {
+                currentAccountId = 'default';
+                updateCurrentAccountDisplay();
+            }
+            
+            // Delete from accounts list
+            delete userAccounts[accountId];
+            
+            // Update dropdown
+            populateAccountsDropdown();
+            populateAccountsList();
+            
+            // Delete account data from Firebase
+            if (currentUser && !initializationError) {
+                try {
+                    // Delete all date ranges for this account
+                    const accountRef = collection(db, 'users', currentUser.uid, 'accounts', accountId, 'dateRanges');
+                    const snapshot = await getDocs(accountRef);
+                    const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
+                    await Promise.all(deletePromises);
+                    
+                    // Delete the account document
+                    await deleteDoc(doc(db, 'users', currentUser.uid, 'accounts', accountId));
+                    
+                    await saveUserAccounts();
+                } catch (error) {
+                    console.error('Error deleting account data:', error);
+                }
+            }
+            
+            alert('Account deleted successfully');
+            loadUserData(); // Reload data for current account
+        }
+        
+        function populateAccountsDropdown() {
+            const dropdown = document.getElementById('currentAccountSelect');
+            dropdown.innerHTML = '';
+            
+            Object.values(userAccounts).forEach(account => {
+                const option = document.createElement('option');
+                option.value = account.id;
+                option.textContent = account.name;
+                if (account.id === currentAccountId) {
+                    option.selected = true;
+                }
+                dropdown.appendChild(option);
+            });
+        }
+        
+        function populateAccountsList() {
+            const container = document.getElementById('accountsList');
+            container.innerHTML = '';
+            
+            Object.values(userAccounts).forEach(account => {
+                const accountDiv = document.createElement('div');
+                accountDiv.className = `account-item ${account.id === currentAccountId ? 'current-account' : ''}`;
+                accountDiv.innerHTML = `
+                    <div class="account-info">
+                        <h4>${account.name} ${account.id === currentAccountId ? '(Current)' : ''}</h4>
+                        <p>${account.description || 'No description'}</p>
+                    </div>
+                    <div class="account-actions">
+                        ${account.id !== 'default' ? `
+                            <button onclick="editAccount('${account.id}')" style="background: #3182ce;">Edit</button>
+                            <button onclick="deleteAccount('${account.id}')" style="background: #e53e3e;">Delete</button>
+                        ` : '<span style="color: #718096; font-size: 12px;">Default account</span>'}
+                    </div>
+                `;
+                container.appendChild(accountDiv);
+            });
+        }
+        
+        async function saveUserAccounts() {
+            if (!currentUser || initializationError) return;
+            
+            try {
+                const accountsRef = doc(db, 'users', currentUser.uid, 'settings', 'accounts');
+                await setDoc(accountsRef, {
+                    accounts: userAccounts,
+                    currentAccountId: currentAccountId,
+                    lastUpdated: new Date().toISOString()
+                });
+            } catch (error) {
+                console.error('Error saving accounts:', error);
+            }
+        }
+        
+        async function loadUserAccounts() {
+            if (!currentUser || initializationError) return;
+            
+            try {
+                const accountsRef = doc(db, 'users', currentUser.uid, 'settings', 'accounts');
+                const accountsSnap = await getDoc(accountsRef);
+                
+                if (accountsSnap.exists()) {
+                    const data = accountsSnap.data();
+                    userAccounts = data.accounts || userAccounts;
+                    currentAccountId = data.currentAccountId || 'default';
+                }
+                
+                populateAccountsDropdown();
+                updateCurrentAccountDisplay();
+            } catch (error) {
+                console.error('Error loading accounts:', error);
+            }
+        }
             const resultDiv = document.querySelector(`#actions-${index}`).closest('.analysis-result');
             const extractedData = JSON.parse(resultDiv.dataset.extractedData);
             const platform = document.getElementById(`platform-${index}`).value;
