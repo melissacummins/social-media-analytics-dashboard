@@ -5,13 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Social Media Analytics Dashboard</title>
     <style>
+        :root {
+            --account-color: #667eea;
+            --account-color-light: #ebf8ff;
+            --account-color-dark: #5a67d8;
+        }
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--account-color) 0%, #764ba2 100%);
             min-height: 100vh;
+            transition: background 0.3s ease;
         }
         
         .container {
@@ -84,7 +91,7 @@
             padding: 25px;
             border-radius: 12px;
             margin-bottom: 30px;
-            border-left: 5px solid #667eea;
+            border-left: 5px solid var(--account-color);
         }
         
         .entry-methods {
@@ -114,8 +121,8 @@
         }
         
         .entry-method.active {
-            background: #ebf8ff;
-            border: 2px solid #667eea;
+            background: var(--account-color-light);
+            border: 2px solid var(--account-color);
         }
         
         .platform-section {
@@ -152,7 +159,7 @@
         
         .post-entry.editing {
             background: #f0f8ff !important;
-            border: 2px solid #667eea !important;
+            border: 2px solid var(--account-color) !important;
         }
         
         .post-header {
@@ -240,11 +247,11 @@
         
         input:focus, select:focus, textarea:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: var(--account-color);
         }
         
         button {
-            background: #667eea;
+            background: var(--account-color);
             color: white;
             border: none;
             padding: 10px 20px;
@@ -255,7 +262,7 @@
         }
         
         button:hover {
-            background: #5a67d8;
+            background: var(--account-color-dark);
         }
         
         button:disabled {
@@ -287,8 +294,8 @@
         }
         
         .summary-section {
-            background: #ebf8ff;
-            border: 2px solid #bee3f8;
+            background: var(--account-color-light);
+            border: 2px solid var(--account-color);
             border-radius: 10px;
             padding: 20px;
             margin-top: 30px;
@@ -312,7 +319,7 @@
         .summary-number {
             font-size: 2em;
             font-weight: bold;
-            color: #667eea;
+            color: var(--account-color);
         }
         
         .summary-label {
@@ -390,7 +397,7 @@
         }
         
         .api-key-info a {
-            color: #667eea;
+            color: var(--account-color);
             text-decoration: none;
         }
         
@@ -426,7 +433,7 @@
         }
         
         .file-drop-zone:hover {
-            border-color: #667eea;
+            border-color: var(--account-color);
             background: #f7fafc;
         }
         
@@ -483,7 +490,7 @@
             width: 20px;
             height: 20px;
             border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
+            border-top: 3px solid var(--account-color);
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -531,12 +538,12 @@
         }
         
         .csv-method:hover {
-            border-color: #667eea;
+            border-color: var(--account-color);
         }
         
         .csv-method.active {
-            border-color: #667eea;
-            background: #ebf8ff;
+            border-color: var(--account-color);
+            background: var(--account-color-light);
         }
 
         @media (max-width: 768px) {
@@ -655,8 +662,8 @@
         }
         
         .current-account {
-            background: #f0f8ff;
-            border: 2px solid #667eea;
+            background: var(--account-color-light);
+            border: 2px solid var(--account-color);
         }
 
         .migration-notice {
@@ -1616,15 +1623,19 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
             postDiv.className = 'post-entry editing';
             postDiv.dataset.postId = postCounter;
             postDiv.dataset.platform = platform; // Store platform reference
-            postDiv.innerHTML = createPostHTML(postCounter, platform, {
+            
+            // Platform-specific defaults
+            const defaultData = {
                 description: '',
-                type: 'Post', // Default to 'Post'
+                type: platform === 'tiktok' ? 'Video' : 'Post', // TikTok defaults to Video
                 views: '',
                 likes: '',
                 comments: '',
                 shares: '',
                 notes: ''
-            }, true);
+            };
+            
+            postDiv.innerHTML = createPostHTML(postCounter, platform, defaultData, true);
             
             // Find the add button and summary, or add them if they don't exist
             let addButton = container.querySelector('.add-post-button');
@@ -1684,8 +1695,8 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 `<button class="edit-btn" onclick="event.stopPropagation(); editPost('${platform}', ${postId})">Edit</button>
                  <button class="remove-btn" onclick="event.stopPropagation(); removePost(this)">Remove</button>`;
             
-            // Ensure type defaults to 'Post' if not specified
-            const defaultType = data.type || 'Post';
+            // Platform-specific defaults: TikTok is always Video, others default to Post
+            const defaultType = data.type || (platform === 'tiktok' ? 'Video' : 'Post');
             
             return `
                 <div class="post-grid">
@@ -2451,7 +2462,7 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                     
                     actions.style.display = 'block';
                 } else {
-                    statusDiv.innerHTML = '<div class="error-message">❌ Could not extract data. Please try a clearer screenshot or enter manually.</div>';
+                    statusDiv.innerHTML = '<div class="error-message">⚠ Could not extract data. Please try a clearer screenshot or enter manually.</div>';
                     dataGrid.innerHTML = '<p style="color: #718096; text-align: center;">No data extracted</p>';
                 }
                 
@@ -2463,13 +2474,13 @@ Facebook,Post,456,23,8,2,7.24%"></textarea>
                 loadingSpinner.style.display = 'none';
                 
                 if (error.message.includes('401')) {
-                    statusDiv.innerHTML = '<div class="error-message">❌ Invalid API key. Please check your OpenAI API key.</div>';
+                    statusDiv.innerHTML = '<div class="error-message">⚠ Invalid API key. Please check your OpenAI API key.</div>';
                 } else if (error.message.includes('429')) {
-                    statusDiv.innerHTML = '<div class="error-message">❌ API rate limit exceeded. Please wait a moment and try again.</div>';
+                    statusDiv.innerHTML = '<div class="error-message">⚠ API rate limit exceeded. Please wait a moment and try again.</div>';
                 } else if (error.message.includes('insufficient_quota')) {
-                    statusDiv.innerHTML = '<div class="error-message">❌ Insufficient OpenAI credits. Please add credits to your account.</div>';
+                    statusDiv.innerHTML = '<div class="error-message">⚠ Insufficient OpenAI credits. Please add credits to your account.</div>';
                 } else {
-                    statusDiv.innerHTML = '<div class="error-message">❌ Analysis failed. Please try again or enter data manually.</div>';
+                    statusDiv.innerHTML = '<div class="error-message">⚠ Analysis failed. Please try again or enter data manually.</div>';
                 }
             }
         }
@@ -2639,12 +2650,16 @@ Look carefully for any numbers related to engagement metrics. Sometimes they may
             }
         }
         
-        // Account Management Functions
+        // Account Management Functions - ENHANCED with immediate theme application
         function switchAccount() {
             const selectedAccountId = document.getElementById('currentAccountSelect').value;
             if (selectedAccountId !== currentAccountId) {
                 currentAccountId = selectedAccountId;
                 updateCurrentAccountDisplay();
+                
+                // Apply theme immediately when switching accounts
+                applyAccountTheme();
+                
                 loadUserData(); // Reload data for the new account
             }
         }
@@ -2653,10 +2668,47 @@ Look carefully for any numbers related to engagement metrics. Sometimes they may
             const account = userAccounts[currentAccountId];
             document.getElementById('currentAccountName').textContent = account.name;
             document.getElementById('currentAccountDescription').textContent = account.description || '';
+        }
+        
+        // NEW: Function to apply account theme colors
+        function applyAccountTheme() {
+            const account = userAccounts[currentAccountId];
+            const color = account.color || '#667eea';
             
-            // Update theme color if needed
-            const root = document.documentElement;
-            root.style.setProperty('--account-color', account.color);
+            // Convert hex to HSL for lighter variants
+            const lighterColor = lightenColor(color, 0.9);
+            const darkerColor = darkenColor(color, 0.1);
+            
+            // Update CSS custom properties
+            document.documentElement.style.setProperty('--account-color', color);
+            document.documentElement.style.setProperty('--account-color-light', lighterColor);
+            document.documentElement.style.setProperty('--account-color-dark', darkerColor);
+            
+            console.log('Applied theme:', color, 'for account:', account.name);
+        }
+        
+        // Helper function to lighten a color
+        function lightenColor(color, amount) {
+            const num = parseInt(color.slice(1), 16);
+            const amt = Math.round(255 * amount);
+            const R = (num >> 16) + amt;
+            const G = (num >> 8 & 0x00FF) + amt;
+            const B = (num & 0x0000FF) + amt;
+            return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+                (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+                (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
+        }
+        
+        // Helper function to darken a color
+        function darkenColor(color, amount) {
+            const num = parseInt(color.slice(1), 16);
+            const amt = Math.round(255 * amount);
+            const R = (num >> 16) - amt;
+            const G = (num >> 8 & 0x00FF) - amt;
+            const B = (num & 0x0000FF) - amt;
+            return '#' + (0x1000000 + (R > 255 ? 255 : R < 0 ? 0 : R) * 0x10000 +
+                (G > 255 ? 255 : G < 0 ? 0 : G) * 0x100 +
+                (B > 255 ? 255 : B < 0 ? 0 : B)).toString(16).slice(1);
         }
         
         function showCreateAccountModal() {
@@ -2717,9 +2769,12 @@ Look carefully for any numbers related to engagement metrics. Sometimes they may
                 currentAccountId = accountId;
             }
             
-            // Update the dropdown
+            // Update the dropdown and display
             populateAccountsDropdown();
             updateCurrentAccountDisplay();
+            
+            // Apply the theme immediately (critical fix)
+            applyAccountTheme();
             
             // Save to Firebase
             if (currentUser && !initializationError) {
@@ -2759,6 +2814,7 @@ Look carefully for any numbers related to engagement metrics. Sometimes they may
             if (currentAccountId === accountId) {
                 currentAccountId = 'default';
                 updateCurrentAccountDisplay();
+                applyAccountTheme(); // Apply default theme
             }
             
             // Delete from accounts list
@@ -2816,6 +2872,7 @@ Look carefully for any numbers related to engagement metrics. Sometimes they may
                     <div class="account-info">
                         <h4>${account.name} ${account.id === currentAccountId ? '(Current)' : ''}</h4>
                         <p>${account.description || 'No description'}</p>
+                        <div style="width: 20px; height: 20px; background: ${account.color}; border-radius: 50%; margin-top: 5px;"></div>
                     </div>
                     <div class="account-actions">
                         ${account.id !== 'default' ? `
@@ -2858,6 +2915,7 @@ Look carefully for any numbers related to engagement metrics. Sometimes they may
                 
                 populateAccountsDropdown();
                 updateCurrentAccountDisplay();
+                applyAccountTheme(); // Apply the loaded theme
             } catch (error) {
                 console.error('Error loading accounts:', error);
             }
