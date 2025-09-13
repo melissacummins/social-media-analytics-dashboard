@@ -734,8 +734,34 @@
                 </div>
                 <button onclick="signOut()" style="background: #e53e3e; width: auto; padding: 8px 16px;">Sign Out</button>
             </div>
+        </div>
 
-            <!-- Date Range Selector -->
+        <!-- Migration Notice -->
+        <div id="migrationNotice" class="migration-notice hidden">
+            <h3>✅ Data Migration Complete!</h3>
+            <p>Your existing data has been successfully migrated to the new account system and is now available in your "Default Account".</p>
+        </div>
+
+        <!-- Main App Content (shown when logged in) -->
+        <div id="appContent" class="hidden">
+            
+            <!-- Account Management Section -->
+            <div class="main-section">
+                <h2>👥 Account Management</h2>
+                <div style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;">
+                    <select id="currentAccountSelect" onchange="switchAccount()" style="flex: 1; min-width: 200px;">
+                        <option value="default">Default Account</option>
+                    </select>
+                    <button onclick="showCreateAccountModal()" style="background: #38a169; white-space: nowrap;">+ Add New Account</button>
+                    <button onclick="showManageAccountsModal()" style="background: #3182ce; white-space: nowrap;">Manage Accounts</button>
+                </div>
+                <div id="currentAccountInfo" style="background: #f0f8ff; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <strong>Current Account:</strong> <span id="currentAccountName">Default Account</span>
+                    <span id="currentAccountDescription" style="margin-left: 15px; color: #718096;"></span>
+                </div>
+            </div>
+            
+            <!-- Date Range Selector - Simplified to only use date pickers -->
             <div class="date-selector">
                 <h3>📅 Select Date Range</h3>
                 <div class="date-input-section">
@@ -769,6 +795,10 @@
                     <div class="entry-method" onclick="switchEntryMethod('bulk')" id="bulkMethod">
                         <h4>📋 Bulk CSV Import</h4>
                         <p>Import multiple posts at once</p>
+                    </div>
+                    <div class="entry-method" onclick="switchEntryMethod('ai')" id="aiMethod">
+                        <h4>🤖 AI Screenshot Analysis</h4>
+                        <p>Extract data from screenshots</p>
                     </div>
                 </div>
                 
@@ -812,6 +842,47 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
                         </div>
                     </div>
                 </div>
+                
+                <!-- AI Screenshot Analysis Section -->
+                <div id="aiSection" class="entry-section hidden">
+                    <div id="apiKeySection" class="api-key-section">
+                        <h3>🔐 OpenAI API Key Setup</h3>
+                        <p>To use AI screenshot analysis, enter your OpenAI API key. This key is stored securely in your browser session.</p>
+                        
+                        <div style="display: flex; gap: 10px; align-items: center; margin: 20px 0;">
+                            <input type="password" id="openaiApiKey" placeholder="sk-proj-..." style="flex: 1;" onchange="validateApiKey()" oninput="validateApiKey()">
+                            <button onclick="saveApiKey()" id="saveApiKeyBtn" disabled>Save Key</button>
+                            <button onclick="clearApiKey()" id="clearApiKeyBtn" style="background: #e53e3e;" disabled>Clear</button>
+                        </div>
+                        
+                        <div class="api-key-info">
+                            <p><strong>How to get your OpenAI API Key:</strong></p>
+                            <ol>
+                                <li>Go to <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a></li>
+                                <li>Sign in or create an OpenAI account</li>
+                                <li>Click "Create new secret key"</li>
+                                <li>Copy the key and paste it above</li>
+                                <li>Add $5-10 in credits to your account</li>
+                            </ol>
+                            <p><strong>Cost:</strong> ~$0.01 per screenshot analyzed</p>
+                        </div>
+                        
+                        <div id="apiKeyStatus" class="hidden">
+                            <div class="success-message">✅ API Key configured! You can now upload screenshots for analysis.</div>
+                        </div>
+                    </div>
+                    
+                    <div id="uploadSection" class="hidden">
+                        <div class="file-drop-zone" onclick="document.getElementById('screenshotInput').click()">
+                            <p>📱 Click to upload screenshots</p>
+                            <p style="font-size: 0.9em; color: #718096;">Supports: Instagram, TikTok, Facebook, Threads analytics screenshots</p>
+                            <p style="font-size: 0.8em; color: #a0aec0;">PNG, JPG, JPEG formats</p>
+                        </div>
+                        <input type="file" id="screenshotInput" accept="image/*" multiple style="display: none;" onchange="analyzeScreenshots(event)">
+                        
+                        <div id="analysisResults" style="margin-top: 20px;"></div>
+                    </div>
+                </div>
             </div>
             
             <div class="loading" id="loadingIndicator" style="display: none;">Loading your data...</div>
@@ -850,6 +921,59 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
                 </div>
             </div>
         </div>
+        
+        <!-- Account Creation Modal -->
+        <div id="accountModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modalTitle">Create New Account</h3>
+                    <button class="modal-close" onclick="closeAccountModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div style="margin-bottom: 15px;">
+                        <label for="accountName"><strong>Account Name:</strong></label>
+                        <input type="text" id="accountName" placeholder="e.g., My TikTok Account, PA's TikTok Account" style="width: 100%; margin-top: 5px;">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label for="accountDescription"><strong>Description (Optional):</strong></label>
+                        <input type="text" id="accountDescription" placeholder="e.g., Personal account, Assistant managed account" style="width: 100%; margin-top: 5px;">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label for="accountColor"><strong>Color Theme:</strong></label>
+                        <select id="accountColor" style="width: 100%; margin-top: 5px;">
+                            <option value="#667eea">Blue (Default)</option>
+                            <option value="#38a169">Green</option>
+                            <option value="#d69e2e">Orange</option>
+                            <option value="#9f7aea">Purple</option>
+                            <option value="#ed64a6">Pink</option>
+                            <option value="#e53e3e">Red</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button onclick="closeAccountModal()" style="background: #718096;">Cancel</button>
+                    <button onclick="saveAccount()" id="saveAccountBtn" style="background: #38a169;">Create Account</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Account Management Modal -->
+        <div id="manageModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Manage Accounts</h3>
+                    <button class="modal-close" onclick="closeManageModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="accountsList">
+                        <!-- Account list will be populated here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button onclick="closeManageModal()" style="background: #718096;">Close</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Firebase SDK -->
@@ -864,9 +988,23 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
         let currentUser = null;
         let postCounter = 0;
         let initializationError = null;
+        let userApiKey = null;
         let currentEntryMethod = 'dashboard';
         let editingPostId = null;
         let csvInputMethod = 'paste';
+        
+        // Account management variables
+        let currentAccountId = 'default';
+        let userAccounts = {
+            'default': {
+                id: 'default',
+                name: 'Default Account',
+                description: '',
+                color: '#667eea',
+                createdAt: new Date().toISOString()
+            }
+        };
+        let editingAccountId = null;
 
         try {
             const firebaseConfig = {
@@ -911,7 +1049,22 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
         window.exportData = exportData;
         window.processBulkData = processBulkData;
         window.processCSVFile = processCSVFile;
+        window.analyzeScreenshots = analyzeScreenshots;
+        window.addExtractedDataToTracker = addExtractedDataToTracker;
+        window.saveApiKey = saveApiKey;
+        window.clearApiKey = clearApiKey;
+        window.validateApiKey = validateApiKey;
         window.calculateEngagement = calculateEngagement;
+        
+        // Account management functions
+        window.switchAccount = switchAccount;
+        window.showCreateAccountModal = showCreateAccountModal;
+        window.showManageAccountsModal = showManageAccountsModal;
+        window.closeAccountModal = closeAccountModal;
+        window.closeManageModal = closeManageModal;
+        window.saveAccount = saveAccount;
+        window.editAccount = editAccount;
+        window.deleteAccount = deleteAccount;
         window.updateFollowersDisplay = updateFollowersDisplay;
 
         // Initialize app
@@ -1014,6 +1167,7 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
             }
 
             try {
+                userApiKey = null;
                 await firebaseSignOut(auth);
                 console.log('Sign out successful');
                 hideError();
@@ -1038,11 +1192,13 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
         function showAuthSection() {
             document.getElementById('authSection').classList.remove('hidden');
             document.getElementById('userSection').classList.add('hidden');
+            document.getElementById('appContent').classList.add('hidden');
         }
 
         function showUserSection() {
             document.getElementById('authSection').classList.add('hidden');
             document.getElementById('userSection').classList.remove('hidden');
+            document.getElementById('appContent').classList.remove('hidden');
             
             document.getElementById('userName').textContent = currentUser.displayName || 'User';
             document.getElementById('userEmail').textContent = currentUser.email;
@@ -1050,9 +1206,12 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
             
             hideError();
             document.getElementById('debugInfo').classList.add('hidden');
+            
+            checkApiKeyStatus();
+            loadUserAccounts(); // Load user's accounts
         }
 
-        // Data functions
+        // ENHANCED Data functions with migration capability
         async function loadUserData() {
             if (!currentUser || initializationError) return;
 
@@ -1066,16 +1225,26 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
                     return;
                 }
                 
-                const docRef = doc(db, 'users', currentUser.uid, 'dateRanges', startDate);
+                // Load data for specific account
+                const docRef = doc(db, 'users', currentUser.uid, 'accounts', currentAccountId, 'dateRanges', startDate);
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {
                     const rangeData = docSnap.data();
-                    console.log('Loading data for range:', startDate, rangeData);
+                    console.log('Loading data for account:', currentAccountId, 'range:', startDate, rangeData);
                     populateFormWithData(rangeData);
                 } else {
-                    console.log('No data found for date range:', startDate);
-                    clearAllPlatformPosts();
+                    console.log('No data found for account:', currentAccountId, 'date range:', startDate);
+                    
+                    // If this is the default account and no data found, try to migrate old data
+                    if (currentAccountId === 'default') {
+                        const migrated = await migrateOldDataIfExists(startDate);
+                        if (!migrated) {
+                            clearAllPlatformPosts();
+                        }
+                    } else {
+                        clearAllPlatformPosts();
+                    }
                 }
 
                 loadingIndicator.style.display = 'none';
@@ -1084,6 +1253,49 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
                 loadingIndicator.style.display = 'none';
                 showError(`Failed to load data: ${error.message}`);
             }
+        }
+
+        // Migration function to move old data to default account
+        async function migrateOldDataIfExists(startDate) {
+            try {
+                // Check if data exists in the old location
+                const oldDocRef = doc(db, 'users', currentUser.uid, 'dateRanges', startDate);
+                const oldDocSnap = await getDoc(oldDocRef);
+                
+                if (oldDocSnap.exists()) {
+                    console.log('Found old data, migrating to default account...');
+                    const oldData = oldDocSnap.data();
+                    
+                    // Save to new location (default account)
+                    const newDocRef = doc(db, 'users', currentUser.uid, 'accounts', 'default', 'dateRanges', startDate);
+                    await setDoc(newDocRef, oldData);
+                    
+                    // Delete from old location
+                    await deleteDoc(oldDocRef);
+                    
+                    console.log('Migration completed for date:', startDate);
+                    populateFormWithData(oldData);
+                    
+                    // Show migration notice
+                    showMigrationNotice();
+                    
+                    return true; // Successfully migrated
+                }
+            } catch (error) {
+                console.error('Migration error:', error);
+            }
+            
+            return false; // No migration performed
+        }
+
+        function showMigrationNotice() {
+            const noticeElement = document.getElementById('migrationNotice');
+            noticeElement.classList.remove('hidden');
+            
+            // Auto-hide after 10 seconds
+            setTimeout(() => {
+                noticeElement.classList.add('hidden');
+            }, 10000);
         }
 
         function clearAllPlatformPosts() {
@@ -1095,7 +1307,7 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
                 }
                 updatePlatformSummary(platform);
             });
-            postCounter = 0;
+            postCounter = 0; // Reset counter when clearing
         }
 
         async function saveData() {
@@ -1106,9 +1318,10 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
                 const startDate = document.getElementById('startDatePicker').value;
                 if (!startDate) return;
                 
-                console.log('Saving data for range:', startDate, rangeData);
+                console.log('Saving data for account:', currentAccountId, 'range:', startDate, rangeData);
                 
-                const docRef = doc(db, 'users', currentUser.uid, 'dateRanges', startDate);
+                // Save data for specific account
+                const docRef = doc(db, 'users', currentUser.uid, 'accounts', currentAccountId, 'dateRanges', startDate);
                 await setDoc(docRef, rangeData, { merge: true });
                 console.log('Data saved successfully');
             } catch (error) {
@@ -1129,7 +1342,7 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
                     analytics: parseFloat(document.getElementById('time-analytics')?.value) || 0
                 },
                 lastUpdated: new Date().toISOString(),
-                postCounter: postCounter
+                postCounter: postCounter // Save current post counter
             };
 
             const platforms = ['instagram', 'facebook', 'threads', 'tiktok', 'pinterest'];
@@ -1153,7 +1366,7 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
                 const postId = post.dataset.postId;
                 postData.push({
                     id: postId,
-                    platform: platform,
+                    platform: platform, // Store platform with each post
                     description: post.querySelector('.post-description')?.value || '',
                     type: post.querySelector('.post-type')?.value || '',
                     views: parseInt(post.querySelector('.post-views')?.value) || 0,
@@ -1172,8 +1385,10 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
         function populateFormWithData(rangeData) {
             console.log('Populating form with data:', rangeData);
             
+            // Clear existing posts first
             clearAllPlatformPosts();
             
+            // Restore post counter
             if (rangeData.postCounter) {
                 postCounter = rangeData.postCounter;
             }
@@ -1188,6 +1403,7 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
                     const container = document.getElementById(platform + '-posts');
                     if (container) {
                         rangeData.platforms[platform].posts.forEach((postData, index) => {
+                            // Add header for each post
                             const headerDiv = document.createElement('div');
                             headerDiv.className = 'post-header';
                             headerDiv.innerHTML = `
@@ -1203,6 +1419,7 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
                             `;
                             container.appendChild(headerDiv);
                             
+                            // Add the post
                             const postDiv = document.createElement('div');
                             postDiv.className = 'post-entry';
                             postDiv.dataset.postId = postData.id || postCounter++;
@@ -1217,6 +1434,7 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
                             }, 100);
                         });
                         
+                        // Add the "Add Another Post" button and summary at the end
                         const addButton = document.createElement('div');
                         addButton.className = 'add-post-button';
                         addButton.innerHTML = `<button onclick="addPost('${platform}')" style="background: #38a169; margin: 20px 0;">+ Add Another Post</button>`;
@@ -1255,13 +1473,14 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
             }
         }
 
-        // Date range functions
+        // Date range functions - SIMPLIFIED
         function updateDateRange() {
             const startDate = document.getElementById('startDatePicker').value;
             const endDate = document.getElementById('endDatePicker').value;
             
             if (!startDate) return;
             
+            // Auto-calculate end date if not provided (7 days from start)
             if (!endDate) {
                 const start = new Date(startDate);
                 const end = new Date(start);
@@ -1269,6 +1488,7 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
                 document.getElementById('endDatePicker').value = end.toISOString().split('T')[0];
             }
             
+            // Load data for new date range
             if (currentUser && !initializationError) {
                 loadUserData();
             }
@@ -1277,10 +1497,10 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
         function setThisWeek() {
             const today = new Date();
             const monday = new Date(today);
-            monday.setDate(today.getDate() - today.getDay() + 1);
+            monday.setDate(today.getDate() - today.getDay() + 1); // Get Monday
             
             const sunday = new Date(monday);
-            sunday.setDate(monday.getDate() + 6);
+            sunday.setDate(monday.getDate() + 6); // Get Sunday
             
             document.getElementById('startDatePicker').value = monday.toISOString().split('T')[0];
             document.getElementById('endDatePicker').value = sunday.toISOString().split('T')[0];
@@ -1291,10 +1511,10 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
         function setLastWeek() {
             const today = new Date();
             const lastMonday = new Date(today);
-            lastMonday.setDate(today.getDate() - today.getDay() + 1 - 7);
+            lastMonday.setDate(today.getDate() - today.getDay() + 1 - 7); // Get last Monday
             
             const lastSunday = new Date(lastMonday);
-            lastSunday.setDate(lastMonday.getDate() + 6);
+            lastSunday.setDate(lastMonday.getDate() + 6); // Get last Sunday
             
             document.getElementById('startDatePicker').value = lastMonday.toISOString().split('T')[0];
             document.getElementById('endDatePicker').value = lastSunday.toISOString().split('T')[0];
@@ -1305,19 +1525,24 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
         function switchEntryMethod(method) {
             currentEntryMethod = method;
             
+            // Update active method styling
             document.querySelectorAll('.entry-method').forEach(el => el.classList.remove('active'));
             document.getElementById(method + 'Method').classList.add('active');
             
+            // Show/hide sections
             document.getElementById('dashboardSection').classList.toggle('hidden', method !== 'dashboard');
             document.getElementById('bulkSection').classList.toggle('hidden', method !== 'bulk');
+            document.getElementById('aiSection').classList.toggle('hidden', method !== 'ai');
         }
 
         function switchCSVMethod(method) {
             csvInputMethod = method;
             
+            // Update active method styling
             document.querySelectorAll('.csv-method').forEach(el => el.classList.remove('active'));
             document.getElementById(method + 'Method').classList.add('active');
             
+            // Show/hide sections
             document.getElementById('pasteCSVSection').classList.toggle('hidden', method !== 'paste');
             document.getElementById('uploadCSVSection').classList.toggle('hidden', method !== 'upload');
         }
@@ -1375,11 +1600,12 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
             }
         }
 
-        // Post management functions with NEW FOLLOWERS support
+        // FIXED: Post management functions with proper ID handling and event prevention - NOW WITH NEW FOLLOWERS
         function addPost(platform) {
             postCounter++;
             const container = document.getElementById(platform + '-posts');
             
+            // Create header for this post (appears above each post)
             const headerDiv = document.createElement('div');
             headerDiv.className = 'post-header';
             headerDiv.innerHTML = `
@@ -1397,11 +1623,12 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
             const postDiv = document.createElement('div');
             postDiv.className = 'post-entry editing';
             postDiv.dataset.postId = postCounter;
-            postDiv.dataset.platform = platform;
+            postDiv.dataset.platform = platform; // Store platform reference
             
+            // Platform-specific defaults
             const defaultData = {
                 description: '',
-                type: platform === 'tiktok' ? 'Video' : 'Post',
+                type: platform === 'tiktok' ? 'Video' : 'Post', // TikTok defaults to Video
                 views: '',
                 likes: '',
                 comments: '',
@@ -1412,6 +1639,7 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
             
             postDiv.innerHTML = createPostHTML(postCounter, platform, defaultData, true);
             
+            // Find the add button and summary, or add them if they don't exist
             let addButton = container.querySelector('.add-post-button');
             let summary = container.querySelector('.platform-summary-section');
             
@@ -1432,6 +1660,7 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
                 `;
             }
             
+            // Remove existing add button and summary
             if (container.querySelector('.add-post-button')) {
                 container.querySelector('.add-post-button').remove();
             }
@@ -1439,8 +1668,11 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
                 container.querySelector('.platform-summary-section').remove();
             }
             
+            // Add header, then post
             container.appendChild(headerDiv);
             container.appendChild(postDiv);
+            
+            // Add the button after the post, then summary at the end
             container.appendChild(addButton);
             container.appendChild(summary);
             
@@ -1465,6 +1697,7 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
                 `<button class="edit-btn" onclick="event.stopPropagation(); editPost('${platform}', ${postId})">Edit</button>
                  <button class="remove-btn" onclick="event.stopPropagation(); removePost(this)">Remove</button>`;
             
+            // Platform-specific defaults: TikTok is always Video, others default to Post
             const defaultType = data.type || (platform === 'tiktok' ? 'Video' : 'Post');
             
             // NEW: Format new followers with styling
@@ -1507,6 +1740,7 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
         function editPost(platform, postId) {
             console.log('Editing post:', postId, 'on platform:', platform);
             
+            // Cancel any other edit first
             if (editingPostId !== null && editingPostId !== postId) {
                 cancelEdit();
             }
@@ -1521,6 +1755,7 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
             
             postDiv.classList.add('editing');
             
+            // Collect current data more carefully, using temp values as backup
             const descriptionEl = postDiv.querySelector('.post-description');
             const typeEl = postDiv.querySelector('.post-type');
             const viewsEl = postDiv.querySelector('.post-views');
@@ -1543,8 +1778,10 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
             
             console.log('Preserving data for edit:', currentData);
             
+            // Replace HTML with editing version, preserving all data
             postDiv.innerHTML = createPostHTML(postId, platform, currentData, true);
             
+            // Set the temp attributes to preserve the data
             setTimeout(() => {
                 const newDescriptionEl = postDiv.querySelector('.post-description');
                 const newTypeEl = postDiv.querySelector('.post-type');
@@ -1564,6 +1801,7 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
                 if (newNewFollowersEl) newNewFollowersEl.setAttribute('data-temp-value', currentData.newFollowers); // NEW
                 if (newNotesEl) newNotesEl.setAttribute('data-temp-value', currentData.notes);
                 
+                // Recalculate engagement and update followers display
                 if (newViewsEl) {
                     calculateEngagement(newViewsEl);
                 }
@@ -1585,6 +1823,7 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
             editingPostId = null;
             postDiv.classList.remove('editing');
             
+            // Collect data more carefully, using temp values as backup
             const descriptionEl = postDiv.querySelector('.post-description');
             const typeEl = postDiv.querySelector('.post-type');
             const viewsEl = postDiv.querySelector('.post-views');
@@ -1607,8 +1846,10 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
             
             console.log('Saving data:', currentData);
             
+            // Replace HTML with non-editing version, preserving all data
             postDiv.innerHTML = createPostHTML(postId, platform, currentData, false);
             
+            // Set temp attributes on the new elements too
             setTimeout(() => {
                 const newDescriptionEl = postDiv.querySelector('.post-description');
                 const newTypeEl = postDiv.querySelector('.post-type');
@@ -1628,6 +1869,7 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
                 if (newNewFollowersEl) newNewFollowersEl.setAttribute('data-temp-value', currentData.newFollowers); // NEW
                 if (newNotesEl) newNotesEl.setAttribute('data-temp-value', currentData.notes);
                 
+                // Recalculate engagement, update followers display, and update summaries
                 if (newViewsEl) {
                     calculateEngagement(newViewsEl);
                 }
@@ -1637,6 +1879,7 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
                 updatePlatformSummary(platform);
             }, 100);
             
+            // Save data
             if (currentUser && !initializationError) {
                 saveData().then(() => {
                     console.log('Post saved successfully');
@@ -1652,6 +1895,7 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
             const postDiv = document.querySelector(`[data-post-id="${postId}"]`);
             if (!postDiv) return;
             
+            // If this is a new post (was created in editing mode), remove it entirely
             if (editingPostId === postId && postDiv.classList.contains('editing')) {
                 removePost(postDiv.querySelector('.cancel-btn'));
                 return;
@@ -1659,6 +1903,7 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
             
             editingPostId = null;
             
+            // Trigger a data reload to restore original state
             if (currentUser && !initializationError) {
                 loadUserData();
             }
@@ -1675,16 +1920,19 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
                 editingPostId = null;
             }
             
+            // Find and remove the associated header (the one directly before this post)
             const postHeader = postEntry.previousElementSibling;
             if (postHeader && postHeader.classList.contains('post-header')) {
                 postHeader.remove();
             }
             
+            // Remove the post
             postEntry.remove();
             
             const container = document.getElementById(platform + '-posts');
             const remainingPosts = container.querySelectorAll('.post-entry');
             
+            // If no posts left, remove the add button and summary too
             if (remainingPosts.length === 0) {
                 const addButton = container.querySelector('.add-post-button');
                 const summary = container.querySelector('.platform-summary-section');
@@ -1694,6 +1942,7 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
             
             updatePlatformSummary(platform);
             
+            // Save data after removing post
             if (currentUser && !initializationError) {
                 saveData().then(() => {
                     console.log('Post removal saved successfully');
@@ -1757,13 +2006,16 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
                 totalViews += views;
                 totalNewFollowers += newFollowers; // NEW
                 
+                // Calculate engagement rate for all posts (0% if no views)
                 const rate = views > 0 ? ((likes + comments + shares) / views) * 100 : 0;
                 engagementRates.push(rate);
                 
+                // Track best post
                 if (rate > bestPost.rate) {
                     bestPost = { rate, description };
                 }
                 
+                // Track worst post (always, as long as we have posts)
                 if (rate < worstPost.rate) {
                     worstPost = { rate, description };
                 }
@@ -1789,6 +2041,7 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
                 summaryHTML += `<strong>Best Post:</strong> ${bestPost.description} (${bestPost.rate.toFixed(2)}%)<br>`;
             }
             
+            // Show worst post if we have multiple posts and the worst is different from the best
             if (totalPosts > 1 && worstPost.rate !== bestPost.rate && worstPost.rate < Infinity) {
                 summaryHTML += `<strong>Worst Post:</strong> ${worstPost.description} (${worstPost.rate.toFixed(2)}%)<br>`;
             }
@@ -2015,12 +2268,15 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
             let headerProcessed = false;
             let addedCount = 0;
             
+            // Simple CSV parsing
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line) continue;
                 
+                // Skip header row
                 if (!headerProcessed) {
                     headerProcessed = true;
+                    // Check if this looks like a header
                     if (line.toLowerCase().includes('platform') || line.toLowerCase().includes('post')) {
                         continue;
                     }
@@ -2038,6 +2294,7 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
                 const newFollowers = parseInt(values[6]) || 0; // NEW
                 const description = values[7] || postType;
                 
+                // Add to appropriate platform
                 if (['instagram', 'facebook', 'threads', 'tiktok', 'pinterest'].includes(platform)) {
                     addPost(platform);
                     const container = document.getElementById(platform + '-posts');
@@ -2055,6 +2312,7 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
                         calculateEngagement(lastPost.querySelector('.post-views'));
                         updateFollowersDisplay(lastPost.querySelector('.post-new-followers')); // NEW
                         
+                        // Save the post after adding bulk data
                         savePost(platform, lastPost.dataset.postId);
                         addedCount++;
                     }
@@ -2074,6 +2332,7 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
                     alert(`✅ Successfully imported ${addedCount} posts from ${source === 'upload' ? 'file' : 'pasted data'}!`);
                 }
                 
+                // Clear the input
                 if (source === 'paste') {
                     document.getElementById('csvInput').value = '';
                 } else {
@@ -2081,6 +2340,666 @@ Facebook,Post,456,23,8,2,1,7.24%"></textarea>
                 }
             } else {
                 alert('No valid data found in CSV. Please check the format.');
+            }
+        }
+
+        // ENHANCED: AI Screenshot Analysis with followers support
+        async function callOpenAIVision(base64Image) {
+            if (!userApiKey) {
+                throw new Error('No API key provided');
+            }
+            
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${userApiKey}`
+                },
+                body: JSON.stringify({
+                    model: "gpt-4o",
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                {
+                                    type: "text",
+                                    text: `Please analyze this social media analytics screenshot and extract the following data. Look for metrics like views, likes, comments, shares, followers gained, engagement rate, etc. 
+
+Return ONLY a JSON object in this exact format (no other text):
+{
+    "success": true,
+    "data": {
+        "platform": "instagram|facebook|tiktok|threads|pinterest",
+        "postType": "post|reel|story|video|pin",
+        "views": 1234,
+        "likes": 89,
+        "comments": 12,
+        "shares": 5,
+        "newFollowers": 3,
+        "engagementRate": "8.48%",
+        "description": "brief description of what this post was about if visible"
+    }
+}
+
+If you cannot extract meaningful data, return:
+{
+    "success": false,
+    "error": "reason why data could not be extracted"
+}
+
+Look carefully for any numbers related to engagement metrics and follower gains. Sometimes they may be labeled differently (e.g., "reactions" instead of "likes", "reposts" instead of "shares", "followers gained" or "new followers", etc.).`
+                                },
+                                {
+                                    type: "image_url",
+                                    image_url: {
+                                        url: `data:image/jpeg;base64,${base64Image}`
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    max_tokens: 500
+                })
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.text();
+                throw new Error(`OpenAI API error: ${response.status} - ${errorData}`);
+            }
+            
+            const result = await response.json();
+            const content = result.choices[0].message.content;
+            
+            try {
+                const jsonMatch = content.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    return JSON.parse(jsonMatch[0]);
+                } else {
+                    throw new Error('No valid JSON found in response');
+                }
+            } catch (parseError) {
+                console.error('JSON parse error:', parseError);
+                return {
+                    success: false,
+                    error: 'Could not parse AI response'
+                };
+            }
+        }
+        
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => {
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = error => reject(error);
+            });
+        }
+        
+        // ENHANCED: Add extracted data with followers support
+        function addExtractedDataToTracker(index) {
+            const resultDiv = document.querySelector(`#actions-${index}`).closest('.analysis-result');
+            const extractedData = JSON.parse(resultDiv.dataset.extractedData);
+            const platform = document.getElementById(`platform-${index}`).value;
+            
+            // Switch to dashboard view if not already there
+            if (currentEntryMethod !== 'dashboard') {
+                switchEntryMethod('dashboard');
+            }
+            
+            // Add post to the selected platform (this creates it in editing mode)
+            addPost(platform);
+            
+            // Get the last added post and populate it
+            const container = document.getElementById(platform + '-posts');
+            const lastPost = container.lastElementChild.previousElementSibling; // Get post before add button
+            
+            if (lastPost && lastPost.classList.contains('post-entry') && extractedData) {
+                lastPost.querySelector('.post-description').value = extractedData.description || 'AI extracted post';
+                
+                // Set the post type if available
+                const typeSelect = lastPost.querySelector('.post-type');
+                if (extractedData.postType && typeSelect) {
+                    // Map common types to our dropdown options
+                    const typeMap = {
+                        'reel': 'Reel',
+                        'post': 'Post', 
+                        'story': 'Story',
+                        'carousel': 'Carousel',
+                        'video': 'Video',
+                        'pin': 'Pin',
+                        'tweet': 'Tweet'
+                    };
+                    const mappedType = typeMap[extractedData.postType.toLowerCase()] || extractedData.postType;
+                    
+                    // Find matching option
+                    for (let option of typeSelect.options) {
+                        if (option.value.toLowerCase() === mappedType.toLowerCase()) {
+                            option.selected = true;
+                            break;
+                        }
+                    }
+                    
+                    // If no match found, use "Other"
+                    if (typeSelect.value === '') {
+                        typeSelect.value = 'Other';
+                    }
+                }
+                
+                lastPost.querySelector('.post-views').value = extractedData.views || '';
+                lastPost.querySelector('.post-likes').value = extractedData.likes || '';
+                lastPost.querySelector('.post-comments').value = extractedData.comments || '';
+                lastPost.querySelector('.post-shares').value = extractedData.shares || '';
+                lastPost.querySelector('.post-new-followers').value = extractedData.newFollowers || ''; // NEW
+                
+                // Calculate engagement rate and update followers display if we have views
+                if (extractedData.views > 0) {
+                    calculateEngagement(lastPost.querySelector('.post-views'));
+                }
+                
+                // Update followers display
+                const followersInput = lastPost.querySelector('.post-new-followers');
+                if (followersInput) {
+                    updateFollowersDisplay(followersInput);
+                }
+                
+                // Save the post immediately after adding AI data
+                savePost(platform, lastPost.dataset.postId);
+                
+                alert(`✅ Data added to ${platform.charAt(0).toUpperCase() + platform.slice(1)} dashboard and saved!`);
+                
+                // Optionally hide the analysis result after adding
+                resultDiv.style.opacity = '0.6';
+                const addButton = resultDiv.querySelector('button');
+                addButton.textContent = 'Added ✓';
+                addButton.disabled = true;
+            }
+        }
+
+        // Enhanced analyze screenshot function with followers data extraction
+        async function analyzeScreenshot(file, index) {
+            const resultsContainer = document.getElementById('analysisResults');
+            
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'analysis-result';
+            resultDiv.innerHTML = `
+                <div class="analysis-header">
+                    <h4>📱 ${file.name}</h4>
+                    <div class="loading-spinner"></div>
+                </div>
+                <img class="screenshot-preview" src="${URL.createObjectURL(file)}" alt="Screenshot preview">
+                <div class="status">Analyzing with AI...</div>
+                <div class="extracted-data-grid" id="data-${index}"></div>
+                <div class="actions" id="actions-${index}" style="display: none;">
+                    <select id="platform-${index}" style="margin-right: 10px;">
+                        <option value="instagram">Instagram</option>
+                        <option value="facebook">Facebook</option>
+                        <option value="threads">Threads</option>
+                        <option value="tiktok">TikTok</option>
+                        <option value="pinterest">Pinterest</option>
+                    </select>
+                    <button onclick="addExtractedDataToTracker(${index})" style="background: #38a169;">Add to Dashboard</button>
+                </div>
+            `;
+            resultsContainer.appendChild(resultDiv);
+            
+            try {
+                const base64Image = await fileToBase64(file);
+                const extractedData = await callOpenAIVision(base64Image);
+                
+                const statusDiv = resultDiv.querySelector('.status');
+                const loadingSpinner = resultDiv.querySelector('.loading-spinner');
+                const dataGrid = document.getElementById(`data-${index}`);
+                const actions = document.getElementById(`actions-${index}`);
+                
+                loadingSpinner.style.display = 'none';
+                statusDiv.innerHTML = '<div class="success-message">✅ Analysis complete!</div>';
+                
+                if (extractedData.success) {
+                    dataGrid.innerHTML = `
+                        <div class="data-field">
+                            <div class="data-label">Post Type</div>
+                            <div class="data-value">${extractedData.data.postType || 'Unknown'}</div>
+                        </div>
+                        <div class="data-field">
+                            <div class="data-label">Views</div>
+                            <div class="data-value">${extractedData.data.views || 0}</div>
+                        </div>
+                        <div class="data-field">
+                            <div class="data-label">Likes</div>
+                            <div class="data-value">${extractedData.data.likes || 0}</div>
+                        </div>
+                        <div class="data-field">
+                            <div class="data-label">Comments</div>
+                            <div class="data-value">${extractedData.data.comments || 0}</div>
+                        </div>
+                        <div class="data-field">
+                            <div class="data-label">Shares</div>
+                            <div class="data-value">${extractedData.data.shares || 0}</div>
+                        </div>
+                        <div class="data-field">
+                            <div class="data-label">New Followers</div>
+                            <div class="data-value ${extractedData.data.newFollowers > 0 ? 'positive' : extractedData.data.newFollowers < 0 ? 'negative' : 'zero'}">${extractedData.data.newFollowers > 0 ? '+' : ''}${extractedData.data.newFollowers || 0}</div>
+                        </div>
+                        <div class="data-field">
+                            <div class="data-label">Engagement Rate</div>
+                            <div class="data-value">${extractedData.data.engagementRate || 'Auto-calc'}</div>
+                        </div>
+                    `;
+                    
+                    resultDiv.dataset.extractedData = JSON.stringify(extractedData.data);
+                    
+                    if (extractedData.data.platform) {
+                        document.getElementById(`platform-${index}`).value = extractedData.data.platform.toLowerCase();
+                    }
+                    
+                    actions.style.display = 'block';
+                } else {
+                    statusDiv.innerHTML = '<div class="error-message">⚠ Could not extract data. Please try a clearer screenshot or enter manually.</div>';
+                    dataGrid.innerHTML = '<p style="color: #718096; text-align: center;">No data extracted</p>';
+                }
+                
+            } catch (error) {
+                console.error('Analysis error:', error);
+                const statusDiv = resultDiv.querySelector('.status');
+                const loadingSpinner = resultDiv.querySelector('.loading-spinner');
+                
+                loadingSpinner.style.display = 'none';
+                
+                if (error.message.includes('401')) {
+                    statusDiv.innerHTML = '<div class="error-message">⚠ Invalid API key. Please check your OpenAI API key.</div>';
+                } else if (error.message.includes('429')) {
+                    statusDiv.innerHTML = '<div class="error-message">⚠ API rate limit exceeded. Please wait a moment and try again.</div>';
+                } else if (error.message.includes('insufficient_quota')) {
+                    statusDiv.innerHTML = '<div class="error-message">⚠ Insufficient OpenAI credits. Please add credits to your account.</div>';
+                } else {
+                    statusDiv.innerHTML = '<div class="error-message">⚠ Analysis failed. Please try again or enter data manually.</div>';
+                }
+            }
+        }
+
+        // API Key Management Functions - FIXED to auto-detect existing keys
+        function validateApiKey() {
+            const apiKeyInput = document.getElementById('openaiApiKey');
+            const saveBtn = document.getElementById('saveApiKeyBtn');
+            const clearBtn = document.getElementById('clearApiKeyBtn');
+            
+            const apiKey = apiKeyInput.value.trim();
+            const isValid = apiKey.startsWith('sk-') && apiKey.length > 20;
+            
+            saveBtn.disabled = !isValid;
+            clearBtn.disabled = !(userApiKey || apiKey);
+            
+            // If there's a valid API key in the input and it's not already saved, automatically enable upload
+            if (isValid && !userApiKey) {
+                userApiKey = apiKey;
+                document.getElementById('apiKeyStatus').classList.remove('hidden');
+                document.getElementById('uploadSection').classList.remove('hidden');
+                
+                apiKeyInput.placeholder = 'API Key saved ✅';
+                apiKeyInput.style.backgroundColor = '#f0fff4';
+                apiKeyInput.style.borderColor = '#48bb78';
+                saveBtn.disabled = true;
+                clearBtn.disabled = false;
+            }
+        }
+        
+        function saveApiKey() {
+            const apiKeyInput = document.getElementById('openaiApiKey');
+            const apiKey = apiKeyInput.value.trim();
+            
+            if (!apiKey.startsWith('sk-') || apiKey.length < 20) {
+                alert('Please enter a valid OpenAI API key (starts with sk-)');
+                return;
+            }
+            
+            userApiKey = apiKey;
+            console.log('API Key stored:', userApiKey ? 'Yes' : 'No');
+            
+            document.getElementById('apiKeyStatus').classList.remove('hidden');
+            document.getElementById('uploadSection').classList.remove('hidden');
+            
+            apiKeyInput.placeholder = 'API Key saved ✅';
+            apiKeyInput.style.backgroundColor = '#f0fff4';
+            apiKeyInput.style.borderColor = '#48bb78';
+            
+            document.getElementById('saveApiKeyBtn').disabled = true;
+            document.getElementById('clearApiKeyBtn').disabled = false;
+            
+            alert('✅ API Key saved! You can now upload screenshots for analysis.');
+        }
+        
+        function clearApiKey() {
+            userApiKey = null;
+            console.log('API Key cleared');
+            
+            document.getElementById('apiKeyStatus').classList.add('hidden');
+            document.getElementById('uploadSection').classList.add('hidden');
+            document.getElementById('analysisResults').innerHTML = '';
+            
+            const apiKeyInput = document.getElementById('openaiApiKey');
+            apiKeyInput.value = '';
+            apiKeyInput.placeholder = 'sk-proj-...';
+            apiKeyInput.style.backgroundColor = '';
+            apiKeyInput.style.borderColor = '';
+            
+            document.getElementById('saveApiKeyBtn').disabled = true;
+            document.getElementById('clearApiKeyBtn').disabled = true;
+            
+            alert('API Key cleared. Screenshots analysis is now disabled.');
+        }
+        
+        function checkApiKeyStatus() {
+            console.log('Checking API key status:', userApiKey ? 'Key exists' : 'No key');
+            
+            if (userApiKey) {
+                document.getElementById('apiKeyStatus').classList.remove('hidden');
+                document.getElementById('uploadSection').classList.remove('hidden');
+                document.getElementById('clearApiKeyBtn').disabled = false;
+                document.getElementById('saveApiKeyBtn').disabled = true;
+                
+                const apiKeyInput = document.getElementById('openaiApiKey');
+                apiKeyInput.placeholder = 'API Key saved ✅';
+                apiKeyInput.style.backgroundColor = '#f0fff4';
+                apiKeyInput.style.borderColor = '#48bb78';
+            } else {
+                document.getElementById('apiKeyStatus').classList.add('hidden');
+                document.getElementById('uploadSection').classList.add('hidden');
+                document.getElementById('saveApiKeyBtn').disabled = true;
+                document.getElementById('clearApiKeyBtn').disabled = true;
+            }
+        }
+
+        // AI Screenshot Analysis Functions
+        async function analyzeScreenshots(event) {
+            if (!userApiKey) {
+                alert('Please enter your OpenAI API key first to use screenshot analysis.');
+                return;
+            }
+            
+            const files = event.target.files;
+            const resultsContainer = document.getElementById('analysisResults');
+            
+            if (files.length === 0) return;
+            
+            resultsContainer.innerHTML = '<h3>🤖 Analyzing Screenshots...</h3>';
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                await analyzeScreenshot(file, i);
+            }
+        }
+
+        // Account Management Functions - ENHANCED with immediate theme application
+        function switchAccount() {
+            const selectedAccountId = document.getElementById('currentAccountSelect').value;
+            if (selectedAccountId !== currentAccountId) {
+                currentAccountId = selectedAccountId;
+                updateCurrentAccountDisplay();
+                
+                // Apply theme immediately when switching accounts
+                applyAccountTheme();
+                
+                loadUserData(); // Reload data for the new account
+            }
+        }
+        
+        function updateCurrentAccountDisplay() {
+            const account = userAccounts[currentAccountId];
+            document.getElementById('currentAccountName').textContent = account.name;
+            document.getElementById('currentAccountDescription').textContent = account.description || '';
+        }
+        
+        // NEW: Function to apply account theme colors
+        function applyAccountTheme() {
+            const account = userAccounts[currentAccountId];
+            const color = account.color || '#667eea';
+            
+            // Convert hex to HSL for lighter variants
+            const lighterColor = lightenColor(color, 0.9);
+            const darkerColor = darkenColor(color, 0.1);
+            
+            // Update CSS custom properties
+            document.documentElement.style.setProperty('--account-color', color);
+            document.documentElement.style.setProperty('--account-color-light', lighterColor);
+            document.documentElement.style.setProperty('--account-color-dark', darkerColor);
+            
+            console.log('Applied theme:', color, 'for account:', account.name);
+        }
+        
+        // Helper function to lighten a color
+        function lightenColor(color, amount) {
+            const num = parseInt(color.slice(1), 16);
+            const amt = Math.round(255 * amount);
+            const R = (num >> 16) + amt;
+            const G = (num >> 8 & 0x00FF) + amt;
+            const B = (num & 0x0000FF) + amt;
+            return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+                (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+                (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
+        }
+        
+        // Helper function to darken a color
+        function darkenColor(color, amount) {
+            const num = parseInt(color.slice(1), 16);
+            const amt = Math.round(255 * amount);
+            const R = (num >> 16) - amt;
+            const G = (num >> 8 & 0x00FF) - amt;
+            const B = (num & 0x0000FF) - amt;
+            return '#' + (0x1000000 + (R > 255 ? 255 : R < 0 ? 0 : R) * 0x10000 +
+                (G > 255 ? 255 : G < 0 ? 0 : G) * 0x100 +
+                (B > 255 ? 255 : B < 0 ? 0 : B)).toString(16).slice(1);
+        }
+        
+        function showCreateAccountModal() {
+            editingAccountId = null;
+            document.getElementById('modalTitle').textContent = 'Create New Account';
+            document.getElementById('accountName').value = '';
+            document.getElementById('accountDescription').value = '';
+            document.getElementById('accountColor').value = '#667eea';
+            document.getElementById('saveAccountBtn').textContent = 'Create Account';
+            document.getElementById('accountModal').classList.remove('hidden');
+            document.getElementById('accountModal').style.display = 'block';
+        }
+        
+        function showManageAccountsModal() {
+            populateAccountsList();
+            document.getElementById('manageModal').classList.remove('hidden');
+            document.getElementById('manageModal').style.display = 'block';
+        }
+        
+        function closeAccountModal() {
+            document.getElementById('accountModal').classList.add('hidden');
+            document.getElementById('accountModal').style.display = 'none';
+            editingAccountId = null;
+        }
+        
+        function closeManageModal() {
+            document.getElementById('manageModal').classList.add('hidden');
+            document.getElementById('manageModal').style.display = 'none';
+        }
+        
+        async function saveAccount() {
+            const name = document.getElementById('accountName').value.trim();
+            const description = document.getElementById('accountDescription').value.trim();
+            const color = document.getElementById('accountColor').value;
+            
+            if (!name) {
+                alert('Please enter an account name');
+                return;
+            }
+            
+            if (editingAccountId) {
+                // Editing existing account
+                userAccounts[editingAccountId].name = name;
+                userAccounts[editingAccountId].description = description;
+                userAccounts[editingAccountId].color = color;
+            } else {
+                // Creating new account
+                const accountId = 'account_' + Date.now();
+                userAccounts[accountId] = {
+                    id: accountId,
+                    name: name,
+                    description: description,
+                    color: color,
+                    createdAt: new Date().toISOString()
+                };
+                
+                // Switch to the new account
+                currentAccountId = accountId;
+            }
+            
+            // Update the dropdown and display
+            populateAccountsDropdown();
+            updateCurrentAccountDisplay();
+            
+            // Apply the theme immediately (critical fix)
+            applyAccountTheme();
+            
+            // Save to Firebase
+            if (currentUser && !initializationError) {
+                await saveUserAccounts();
+            }
+            
+            closeAccountModal();
+            alert(editingAccountId ? 'Account updated successfully!' : 'Account created successfully!');
+        }
+        
+        function editAccount(accountId) {
+            if (accountId === 'default') return; // Can't edit default account
+            
+            editingAccountId = accountId;
+            const account = userAccounts[accountId];
+            
+            document.getElementById('modalTitle').textContent = 'Edit Account';
+            document.getElementById('accountName').value = account.name;
+            document.getElementById('accountDescription').value = account.description || '';
+            document.getElementById('accountColor').value = account.color;
+            document.getElementById('saveAccountBtn').textContent = 'Update Account';
+            document.getElementById('accountModal').classList.remove('hidden');
+            document.getElementById('accountModal').style.display = 'block';
+        }
+        
+        async function deleteAccount(accountId) {
+            if (accountId === 'default') {
+                alert('Cannot delete the default account');
+                return;
+            }
+            
+            if (!confirm(`Are you sure you want to delete "${userAccounts[accountId].name}"? This will also delete all data associated with this account.`)) {
+                return;
+            }
+            
+            // If deleting current account, switch to default
+            if (currentAccountId === accountId) {
+                currentAccountId = 'default';
+                updateCurrentAccountDisplay();
+                applyAccountTheme(); // Apply default theme
+            }
+            
+            // Delete from accounts list
+            delete userAccounts[accountId];
+            
+            // Update dropdown
+            populateAccountsDropdown();
+            populateAccountsList();
+            
+            // Delete account data from Firebase
+            if (currentUser && !initializationError) {
+                try {
+                    // Delete all date ranges for this account
+                    const accountRef = collection(db, 'users', currentUser.uid, 'accounts', accountId, 'dateRanges');
+                    const snapshot = await getDocs(accountRef);
+                    const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
+                    await Promise.all(deletePromises);
+                    
+                    // Delete the account document
+                    await deleteDoc(doc(db, 'users', currentUser.uid, 'accounts', accountId));
+                    
+                    await saveUserAccounts();
+                } catch (error) {
+                    console.error('Error deleting account data:', error);
+                }
+            }
+            
+            alert('Account deleted successfully');
+            loadUserData(); // Reload data for current account
+        }
+        
+        function populateAccountsDropdown() {
+            const dropdown = document.getElementById('currentAccountSelect');
+            dropdown.innerHTML = '';
+            
+            Object.values(userAccounts).forEach(account => {
+                const option = document.createElement('option');
+                option.value = account.id;
+                option.textContent = account.name;
+                if (account.id === currentAccountId) {
+                    option.selected = true;
+                }
+                dropdown.appendChild(option);
+            });
+        }
+        
+        function populateAccountsList() {
+            const container = document.getElementById('accountsList');
+            container.innerHTML = '';
+            
+            Object.values(userAccounts).forEach(account => {
+                const accountDiv = document.createElement('div');
+                accountDiv.className = `account-item ${account.id === currentAccountId ? 'current-account' : ''}`;
+                accountDiv.innerHTML = `
+                    <div class="account-info">
+                        <h4>${account.name} ${account.id === currentAccountId ? '(Current)' : ''}</h4>
+                        <p>${account.description || 'No description'}</p>
+                        <div style="width: 20px; height: 20px; background: ${account.color}; border-radius: 50%; margin-top: 5px;"></div>
+                    </div>
+                    <div class="account-actions">
+                        ${account.id !== 'default' ? `
+                            <button onclick="editAccount('${account.id}')" style="background: #3182ce;">Edit</button>
+                            <button onclick="deleteAccount('${account.id}')" style="background: #e53e3e;">Delete</button>
+                        ` : '<span style="color: #718096; font-size: 12px;">Default account</span>'}
+                    </div>
+                `;
+                container.appendChild(accountDiv);
+            });
+        }
+        
+        async function saveUserAccounts() {
+            if (!currentUser || initializationError) return;
+            
+            try {
+                const accountsRef = doc(db, 'users', currentUser.uid, 'settings', 'accounts');
+                await setDoc(accountsRef, {
+                    accounts: userAccounts,
+                    currentAccountId: currentAccountId,
+                    lastUpdated: new Date().toISOString()
+                });
+            } catch (error) {
+                console.error('Error saving accounts:', error);
+            }
+        }
+        
+        async function loadUserAccounts() {
+            if (!currentUser || initializationError) return;
+            
+            try {
+                const accountsRef = doc(db, 'users', currentUser.uid, 'settings', 'accounts');
+                const accountsSnap = await getDoc(accountsRef);
+                
+                if (accountsSnap.exists()) {
+                    const data = accountsSnap.data();
+                    userAccounts = data.accounts || userAccounts;
+                    currentAccountId = data.currentAccountId || 'default';
+                }
+                
+                populateAccountsDropdown();
+                updateCurrentAccountDisplay();
+                applyAccountTheme(); // Apply the loaded theme
+            } catch (error) {
+                console.error('Error loading accounts:', error);
             }
         }
 
