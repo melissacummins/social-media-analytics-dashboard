@@ -713,7 +713,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>📱 Social Media Analytics Dashboard <span class="status-badge firebase-cloud">☁️ CLOUD SYNC</span></h1>
+        <h1>Social Media Analytics Dashboard <span class="status-badge firebase-cloud">CLOUD SYNC</span></h1>
         
         <!-- Authentication Section -->
         <div id="authSection" class="auth-section">
@@ -755,7 +755,7 @@
 
         <!-- Migration Notice -->
         <div id="migrationNotice" class="migration-notice hidden">
-            <h3>✅ Data Migration Complete!</h3>
+            <h3>Data Migration Complete!</h3>
             <p>Your existing data has been successfully migrated to the new account system and is now available in your "Default Account".</p>
         </div>
 
@@ -764,7 +764,7 @@
             
             <!-- Account Management Section -->
             <div class="main-section">
-                <h2>👥 Account Management</h2>
+                <h2>Account Management</h2>
                 <div style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;">
                     <select id="currentAccountSelect" onchange="switchAccount()" style="flex: 1; min-width: 200px;">
                         <option value="default">Default Account</option>
@@ -780,7 +780,7 @@
             
             <!-- Date Range Selector - Enhanced with better feedback -->
             <div class="date-selector">
-                <h3>📅 Select Date Range</h3>
+                <h3>Select Date Range</h3>
                 <div class="date-input-section">
                     <div style="flex: 1; min-width: 200px;">
                         <label><strong>Start Date:</strong></label>
@@ -792,32 +792,32 @@
                     </div>
                 </div>
                 <div id="dateRangeInfo" class="date-range-info hidden">
-                    <strong>🔍 Data Found:</strong> <span id="dataRangeText"></span>
+                    <strong>Data Found:</strong> <span id="dataRangeText"></span>
                 </div>
                 <div style="display: flex; gap: 15px; margin-top: 15px; flex-wrap: wrap;">
-                    <button onclick="setThisWeek()">📅 This Week</button>
-                    <button onclick="setLastWeek()">⬅️ Last Week</button>
-                    <button onclick="generateReport()">📊 Generate Report</button>
-                    <button onclick="exportData()" style="background: #38a169;">📥 Export Data</button>
+                    <button onclick="setThisWeek()">This Week</button>
+                    <button onclick="setLastWeek()">Last Week</button>
+                    <button onclick="generateReport()">Generate Report</button>
+                    <button onclick="exportData()" style="background: #38a169;">Export Data</button>
                 </div>
             </div>
             
             <!-- Main Dashboard -->
             <div class="main-section">
-                <h2>📊 Dashboard & Data Entry</h2>
+                <h2>Dashboard & Data Entry</h2>
                 
                 <!-- Entry Method Selection -->
                 <div class="entry-methods">
                     <div class="entry-method active" onclick="switchEntryMethod('dashboard')" id="dashboardMethod">
-                        <h4>📊 Dashboard</h4>
+                        <h4>Dashboard</h4>
                         <p>View and manage all posts</p>
                     </div>
                     <div class="entry-method" onclick="switchEntryMethod('bulk')" id="bulkMethod">
-                        <h4>📋 Bulk CSV Import</h4>
+                        <h4>Bulk CSV Import</h4>
                         <p>Import multiple posts at once</p>
                     </div>
                     <div class="entry-method" onclick="switchEntryMethod('ai')" id="aiMethod">
-                        <h4>🤖 AI Screenshot Analysis</h4>
+                        <h4>AI Screenshot Analysis</h4>
                         <p>Extract data from screenshots</p>
                     </div>
                 </div>
@@ -831,16 +831,16 @@
                 
                 <!-- Bulk Import Section -->
                 <div id="bulkSection" class="entry-section hidden">
-                    <h3>📋 Bulk CSV Import</h3>
+                    <h3>Bulk CSV Import</h3>
                     
                     <div class="csv-upload-section">
                         <div class="csv-input-methods">
                             <div class="csv-method active" onclick="switchCSVMethod('paste')" id="pasteMethod">
-                                <h4>📄 Paste CSV Data</h4>
+                                <h4>Paste CSV Data</h4>
                                 <p>Copy and paste CSV text</p>
                             </div>
                             <div class="csv-method" onclick="switchCSVMethod('upload')" id="uploadMethod">
-                                <h4>🗂 Upload CSV File</h4>
+                                <h4>Upload CSV File</h4>
                                 <p>Upload a .csv file from computer</p>
                             </div>
                         </div>
@@ -866,7 +866,7 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                 <!-- AI Screenshot Analysis Section -->
                 <div id="aiSection" class="entry-section hidden">
                     <div id="apiKeySection" class="api-key-section">
-                        <h3>🔑 OpenAI API Key Setup</h3>
+                        <h3>OpenAI API Key Setup</h3>
                         <p>To use AI screenshot analysis, enter your OpenAI API key. This key is stored securely in your browser session.</p>
                         
                         <div style="display: flex; gap: 10px; align-items: center; margin: 20px 0;">
@@ -888,13 +888,13 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                         </div>
                         
                         <div id="apiKeyStatus" class="hidden">
-                            <div class="success-message">✅ API Key configured! You can now upload screenshots for analysis.</div>
+                            <div class="success-message">API Key configured! You can now upload screenshots for analysis.</div>
                         </div>
                     </div>
                     
                     <div id="uploadSection" class="hidden">
                         <div class="file-drop-zone" onclick="document.getElementById('screenshotInput').click()">
-                            <p>📱 Click to upload screenshots</p>
+                            <p>Click to upload screenshots</p>
                             <p style="font-size: 0.9em; color: #718096;">Supports: Instagram, TikTok, Facebook, Threads analytics screenshots</p>
                             <p style="font-size: 0.8em; color: #a0aec0;">PNG, JPG, JPEG formats</p>
                         </div>
@@ -909,7 +909,7 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             
             <!-- Weekly Summary -->
             <div class="summary-section">
-                <h2>📈 Performance Summary</h2>
+                <h2>Performance Summary</h2>
                 <div class="summary-grid" id="summaryGrid">
                     <!-- Summary cards will be generated here -->
                 </div>
@@ -917,7 +917,7 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             
             <!-- Time Investment -->
             <div class="summary-section">
-                <h2>⏱️ Time Investment Analysis</h2>
+                <h2>Time Investment Analysis</h2>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
                     <div>
                         <label>Content Creation (hours):</label>
@@ -1622,11 +1622,11 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
 
         function initializePlatforms() {
             const platforms = [
-                { id: 'instagram', name: '📸 Instagram', icon: '📸' },
-                { id: 'facebook', name: '📘 Facebook', icon: '📘' },
-                { id: 'threads', name: '🧵 Threads', icon: '🧵' },
-                { id: 'tiktok', name: '🎵 TikTok', icon: '🎵' },
-                { id: 'pinterest', name: '📌 Pinterest', icon: '📌' }
+                { id: 'instagram', name: 'Instagram', icon: 'Instagram' },
+                { id: 'facebook', name: 'Facebook', icon: 'Facebook' },
+                { id: 'threads', name: 'Threads', icon: 'Threads' },
+                { id: 'tiktok', name: 'TikTok', icon: 'TikTok' },
+                { id: 'pinterest', name: 'Pinterest', icon: 'Pinterest' }
             ];
 
             const container = document.getElementById('platformSections');
@@ -1748,11 +1748,11 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
         
         function getPlatformIcon(platform) {
             const icons = {
-                'instagram': '📸 Instagram',
-                'facebook': '📘 Facebook', 
-                'threads': '🧵 Threads',
-                'tiktok': '🎵 TikTok',
-                'pinterest': '📌 Pinterest'
+                'instagram': 'Instagram',
+                'facebook': 'Facebook', 
+                'threads': 'Threads',
+                'tiktok': 'TikTok',
+                'pinterest': 'Pinterest'
             };
             return icons[platform] || platform;
         }
@@ -2493,7 +2493,7 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             resultDiv.className = 'analysis-result';
             resultDiv.innerHTML = `
                 <div class="analysis-header">
-                    <h4>📱 ${file.name}</h4>
+                    <h4>${file.name}</h4>
                     <div class="loading-spinner"></div>
                 </div>
                 <img class="screenshot-preview" src="${URL.createObjectURL(file)}" alt="Screenshot preview">
@@ -2692,7 +2692,7 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             
             if (files.length === 0) return;
             
-            resultsContainer.innerHTML = '<h3>🤖 Analyzing Screenshots...</h3>';
+            resultsContainer.innerHTML = '<h3>Analyzing Screenshots...</h3>';
             
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
