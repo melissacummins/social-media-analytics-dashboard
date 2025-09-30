@@ -1456,13 +1456,6 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                         postDiv.innerHTML = createPostHTML(postId, platform, postData, false);
 
                         container.appendChild(postDiv);
-
-                        setTimeout(() => {
-                            const viewsEl = postDiv.querySelector('.post-views');
-                            if (viewsEl) calculateEngagement(viewsEl);
-                            const followersEl = postDiv.querySelector('.post-new-followers');
-                            if (followersEl) updateFollowersDisplay(followersEl);
-                        }, 0);
                     });
 
                     const addButton = document.createElement('div');
@@ -1712,6 +1705,32 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             else if (newFollowersValue == 0) followersClass += ' zero';
             else if (newFollowersValue < 0) followersClass += ' negative';
 
+            // PRE-CALCULATE engagement rate for display
+            const views = parseFloat(data.views) || 0;
+            const likes = parseFloat(data.likes) || 0;
+            const comments = parseFloat(data.comments) || 0;
+            const saves = parseFloat(data.saves) || 0;
+            const shares = parseFloat(data.shares) || 0;
+            
+            let engagementHTML = '0%';
+            let engagementClass = 'engagement-rate';
+            
+            if (views > 0) {
+                const totalEngagement = likes + comments + saves + shares;
+                const engagementRate = (totalEngagement / views) * 100;
+                engagementHTML = engagementRate.toFixed(2) + '%';
+                
+                if (engagementRate >= 6) {
+                    engagementClass += ' rate-excellent';
+                } else if (engagementRate >= 4) {
+                    engagementClass += ' rate-good';
+                } else if (engagementRate >= 2) {
+                    engagementClass += ' rate-average';
+                } else {
+                    engagementClass += ' rate-poor';
+                }
+            }
+
             return `
                 <div class="post-grid">
                     <input type="text" placeholder="Post description" class="post-description" value="${(data.description || '').replace(/"/g, '&quot;')}" ${!isEditing ? 'readonly' : ''}>
@@ -1731,7 +1750,7 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                     <input type="number" placeholder="0" class="post-saves" value="${data.saves || ''}" ${!isEditing ? 'readonly' : ''}>
                     <input type="number" placeholder="0" class="post-shares" value="${data.shares || ''}" ${!isEditing ? 'readonly' : ''}>
                     <input type="number" placeholder="0" class="post-new-followers ${followersClass}" value="${newFollowersValue}" ${!isEditing ? 'readonly' : ''}>
-                    <div class="engagement-rate" id="rate-${postId}">0%</div>
+                    <div class="${engagementClass}" id="rate-${postId}">${engagementHTML}</div>
                     <input type="text" placeholder="Additional notes" class="post-notes" value="${(data.notes || '').replace(/"/g, '&quot;')}" ${!isEditing ? 'readonly' : ''}>
                     <div class="post-actions">
                         ${saveButtonHTML}
@@ -1774,13 +1793,6 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             postDiv.innerHTML = createPostHTML(postId, platform, currentData, true);
 
             setupPostEntryListeners(postDiv);
-
-            setTimeout(() => {
-                const viewsEl = postDiv.querySelector('.post-views');
-                const followersEl = postDiv.querySelector('.post-new-followers');
-                if (viewsEl) calculateEngagement(viewsEl);
-                if (followersEl) updateFollowersDisplay(followersEl);
-            }, 0);
         }
 
         async function savePost(postId) {
@@ -1794,6 +1806,7 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
 
             const platform = postDiv.dataset.platform;
 
+            // Collect current data from input fields
             const currentData = {
                 description: postDiv.querySelector('.post-description').value,
                 type: postDiv.querySelector('.post-type').value,
@@ -1812,19 +1825,17 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             editingPostId = null;
             postDiv.classList.remove('editing');
 
+            // Re-render to readonly view - engagement is pre-calculated in createPostHTML
             postDiv.innerHTML = createPostHTML(postId, platform, currentData, false);
 
+            // Clear stored original data
             delete originalPostData[postId];
 
-            setTimeout(() => {
-                const viewsEl = postDiv.querySelector('.post-views');
-                const followersEl = postDiv.querySelector('.post-new-followers');
-                if (viewsEl) calculateEngagement(viewsEl);
-                if (followersEl) updateFollowersDisplay(followersEl);
-                updatePlatformSummary(platform);
-                updateOverallSummary();
-            }, 0);
+            // Update summaries
+            updatePlatformSummary(platform);
+            updateOverallSummary();
 
+            // Save to database
             if (currentUser && !initializationError) {
                 try {
                     await saveData();
@@ -1853,14 +1864,8 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
 
                 delete originalPostData[postId];
 
-                setTimeout(() => {
-                    const viewsEl = postDiv.querySelector('.post-views');
-                    const followersEl = postDiv.querySelector('.post-new-followers');
-                    if (viewsEl) calculateEngagement(viewsEl);
-                    if (followersEl) updateFollowersDisplay(followersEl);
-                    updatePlatformSummary(platform);
-                    updateOverallSummary();
-                }, 0);
+                updatePlatformSummary(platform);
+                updateOverallSummary();
             } else {
                 removePost(postId);
             }
@@ -2316,13 +2321,6 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                 }
 
                 setupPostEntryListeners(postDiv);
-
-                setTimeout(() => {
-                    const viewsEl = postDiv.querySelector('.post-views');
-                    if (viewsEl) calculateEngagement(viewsEl);
-                    const followersEl = postDiv.querySelector('.post-new-followers');
-                    if (followersEl) updateFollowersDisplay(followersEl);
-                }, 0);
 
                 addedCount++;
             });
@@ -3098,6 +3096,67 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                  button.removeEventListener('click', handleAddPostButtonClick);
                  button.addEventListener('click', handleAddPostButtonClick);
             });
+            
+            // Add event delegation for each platform container
+            const platforms = ['instagram', 'facebook', 'threads', 'tiktok', 'pinterest'];
+            platforms.forEach(platform => {
+                const container = document.getElementById(platform + '-posts');
+                if (container) {
+                    container.removeEventListener('input', handlePlatformInput);
+                    container.addEventListener('input', handlePlatformInput);
+                }
+            });
+        }
+        
+        function handlePlatformInput(event) {
+            const target = event.target;
+            const postEntry = target.closest('.post-entry');
+            
+            if (!postEntry) return;
+            
+            // Only calculate for editing posts
+            if (!postEntry.classList.contains('editing')) return;
+            
+            // If metric input changed, recalculate
+            if (target.classList.contains('post-views') ||
+                target.classList.contains('post-likes') ||
+                target.classList.contains('post-comments') ||
+                target.classList.contains('post-saves') ||
+                target.classList.contains('post-shares')) {
+                
+                const views = parseFloat(postEntry.querySelector('.post-views').value) || 0;
+                const likes = parseFloat(postEntry.querySelector('.post-likes').value) || 0;
+                const comments = parseFloat(postEntry.querySelector('.post-comments').value) || 0;
+                const saves = parseFloat(postEntry.querySelector('.post-saves').value) || 0;
+                const shares = parseFloat(postEntry.querySelector('.post-shares').value) || 0;
+                const rateElement = postEntry.querySelector('.engagement-rate');
+                
+                if (rateElement && views > 0) {
+                    const totalEngagement = likes + comments + saves + shares;
+                    const engagementRate = (totalEngagement / views) * 100;
+                    
+                    rateElement.textContent = engagementRate.toFixed(2) + '%';
+                    rateElement.className = 'engagement-rate';
+                    
+                    if (engagementRate >= 6) {
+                        rateElement.classList.add('rate-excellent');
+                    } else if (engagementRate >= 4) {
+                        rateElement.classList.add('rate-good');
+                    } else if (engagementRate >= 2) {
+                        rateElement.classList.add('rate-average');
+                    } else {
+                        rateElement.classList.add('rate-poor');
+                    }
+                } else if (rateElement) {
+                    rateElement.textContent = '0%';
+                    rateElement.className = 'engagement-rate';
+                }
+            }
+            
+            // If followers input changed, update display
+            if (target.classList.contains('post-new-followers')) {
+                updateFollowersDisplay(target);
+            }
         }
 
         function handlePlatformHeaderClick(event) {
