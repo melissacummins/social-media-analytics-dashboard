@@ -1678,7 +1678,6 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             container.appendChild(summary);
 
             updatePlatformSummary(platform);
-            setupPostEntryListeners(postDiv);
         }
 
         function getPlatformIcon(platform) {
@@ -1791,8 +1790,6 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             editingPostId = postId;
             postDiv.classList.add('editing');
             postDiv.innerHTML = createPostHTML(postId, platform, currentData, true);
-
-            setupPostEntryListeners(postDiv);
         }
 
         async function savePost(postId) {
@@ -2320,8 +2317,6 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                     container.appendChild(postDiv);
                 }
 
-                setupPostEntryListeners(postDiv);
-
                 addedCount++;
             });
 
@@ -2345,7 +2340,6 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                             container.appendChild(summary);
                         }
                         updatePlatformSummary(platformKey);
-                        setupPostEntryListeners(addButton.querySelector('button'));
                     }
                 });
 
@@ -3102,10 +3096,64 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             platforms.forEach(platform => {
                 const container = document.getElementById(platform + '-posts');
                 if (container) {
+                    // Input events
                     container.removeEventListener('input', handlePlatformInput);
                     container.addEventListener('input', handlePlatformInput);
+                    
+                    // Click events for buttons
+                    container.removeEventListener('click', handlePlatformClick);
+                    container.addEventListener('click', handlePlatformClick);
                 }
             });
+        }
+        
+        function handlePlatformClick(event) {
+            const target = event.target;
+            
+            // Handle Save button
+            if (target.classList.contains('save-btn')) {
+                const postId = target.dataset.postId;
+                if (postId) {
+                    savePost(postId);
+                }
+                return;
+            }
+            
+            // Handle Cancel button
+            if (target.classList.contains('cancel-btn')) {
+                const postId = target.dataset.postId;
+                if (postId) {
+                    cancelEdit(postId);
+                }
+                return;
+            }
+            
+            // Handle Edit button
+            if (target.classList.contains('edit-btn')) {
+                const postId = target.dataset.postId;
+                if (postId) {
+                    editPost(postId);
+                }
+                return;
+            }
+            
+            // Handle Remove button
+            if (target.classList.contains('remove-btn')) {
+                const postId = target.dataset.postId;
+                if (postId && confirm('Are you sure you want to remove this post?')) {
+                    removePost(postId);
+                }
+                return;
+            }
+            
+            // Handle Add Post button
+            if (target.classList.contains('add-post-btn')) {
+                const platform = target.dataset.platform;
+                if (platform) {
+                    addPost(platform);
+                }
+                return;
+            }
         }
         
         function handlePlatformInput(event) {
@@ -3167,83 +3215,6 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
         function handleAddPostButtonClick(event) {
             const platform = event.currentTarget.dataset.platform;
             addPost(platform);
-        }
-
-        function setupPostEntryListeners(postElement = document) {
-            postElement.querySelectorAll('.post-entry').forEach(entry => {
-                const inputs = entry.querySelectorAll('input[type="text"], input[type="number"], select');
-                inputs.forEach(input => {
-                    input.removeEventListener('input', handlePostInputChange);
-                    input.addEventListener('input', handlePostInputChange);
-                });
-
-                const editBtn = entry.querySelector('.edit-btn');
-                if (editBtn) {
-                     editBtn.removeEventListener('click', handleEditPostClick);
-                     editBtn.addEventListener('click', handleEditPostClick);
-                }
-                const saveBtn = entry.querySelector('.save-btn');
-                 if (saveBtn) {
-                     saveBtn.removeEventListener('click', handleSavePostClick);
-                     saveBtn.addEventListener('click', handleSavePostClick);
-                 }
-                const cancelBtn = entry.querySelector('.cancel-btn');
-                 if (cancelBtn) {
-                     cancelBtn.removeEventListener('click', handleCancelEditClick);
-                     cancelBtn.addEventListener('click', handleCancelEditClick);
-                 }
-                const removeBtn = entry.querySelector('.remove-btn');
-                 if (removeBtn) {
-                     removeBtn.removeEventListener('click', handleRemovePostClick);
-                     removeBtn.addEventListener('click', handleRemovePostClick);
-                 }
-            });
-
-            postElement.querySelectorAll('.add-post-btn').forEach(button => {
-                button.removeEventListener('click', handleAddPostButtonClick);
-                button.addEventListener('click', handleAddPostButtonClick);
-            });
-        }
-
-        function handlePostInputChange(event) {
-             const postEntry = event.target.closest('.post-entry');
-             if (postEntry) {
-                 const viewsInput = postEntry.querySelector('.post-views');
-                 const followersInput = postEntry.querySelector('.post-new-followers');
-
-                 if (event.target.classList.contains('post-views') ||
-                     event.target.classList.contains('post-likes') ||
-                     event.target.classList.contains('post-comments') ||
-                     event.target.classList.contains('post-saves') ||
-                     event.target.classList.contains('post-shares')) {
-                     if (viewsInput) calculateEngagement(viewsInput);
-                 }
-                 if (event.target.classList.contains('post-new-followers')) {
-                     if (followersInput) updateFollowersDisplay(followersInput);
-                 }
-             }
-        }
-
-        function handleEditPostClick(event) {
-            const postId = event.target.dataset.postId;
-            editPost(postId);
-        }
-
-        function handleSavePostClick(event) {
-            const postId = event.target.dataset.postId;
-            savePost(postId);
-        }
-
-        function handleCancelEditClick(event) {
-            const postId = event.target.dataset.postId;
-            cancelEdit(postId);
-        }
-
-        function handleRemovePostClick(event) {
-             const postId = event.target.dataset.postId;
-             if (confirm('Are you sure you want to remove this post?')) {
-                 removePost(postId);
-             }
         }
 
         function setupManageAccountModalListeners(container) {
