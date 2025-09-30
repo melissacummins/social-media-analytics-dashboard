@@ -1053,9 +1053,6 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             showError('Firebase initialization failed: ' + error.message);
         }
 
-        // --- Functions defined in the global scope (or attached to window) ---
-        // (These functions will be accessed by event listeners attached via JS)
-
         // UI Helper Functions
         function showError(message) {
             const errorDiv = document.getElementById('errorMessage');
@@ -1083,7 +1080,7 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             document.getElementById('timeAnalysis').innerHTML = 'Enter time data to see analysis';
             document.getElementById('summaryGrid').innerHTML = '';
 
-            clearAllPlatformPosts(); // Assuming this is defined below
+            clearAllPlatformPosts();
         }
 
         function showUserSection() {
@@ -1325,7 +1322,7 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                 }
             });
             postCounter = 0;
-            updateOverallSummary(); // Update overall summary when posts are cleared
+            updateOverallSummary();
         }
 
         async function saveData() {
@@ -1364,7 +1361,7 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                     analytics: parseFloat(document.getElementById('time-analytics') && document.getElementById('time-analytics').value) || 0
                 },
                 lastUpdated: new Date().toISOString(),
-                postCounter: postCounter // Store the highest used post ID to avoid conflicts
+                postCounter: postCounter
             };
 
             const platforms = ['instagram', 'facebook', 'threads', 'tiktok', 'pinterest'];
@@ -1381,25 +1378,34 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             const container = document.getElementById(platform + '-posts');
             if (!container) return [];
 
-            // Select only direct children that are .post-entry
             const posts = container.querySelectorAll('.post-entry');
             const postData = [];
 
             posts.forEach(post => {
                 const postId = post.dataset.postId;
+                const descEl = post.querySelector('.post-description');
+                const typeEl = post.querySelector('.post-type');
+                const viewsEl = post.querySelector('.post-views');
+                const likesEl = post.querySelector('.post-likes');
+                const commentsEl = post.querySelector('.post-comments');
+                const savesEl = post.querySelector('.post-saves');
+                const sharesEl = post.querySelector('.post-shares');
+                const followersEl = post.querySelector('.post-new-followers');
+                const notesEl = post.querySelector('.post-notes');
+                
                 postData.push({
                     id: postId,
                     platform: platform,
-                    description: post.querySelector('.post-description') && post.querySelector('.post-description').value || '',
-                    type: post.querySelector('.post-type') && post.querySelector('.post-type').value || '',
-                    views: parseInt(post.querySelector('.post-views') && post.querySelector('.post-views').value) || 0,
-                    likes: parseInt(post.querySelector('.post-likes') && post.querySelector('.post-likes').value) || 0,
-                    comments: parseInt(post.querySelector('.post-comments') && post.querySelector('.post-comments').value) || 0,
-                    saves: parseInt(post.querySelector('.post-saves') && post.querySelector('.post-saves').value) || 0,
-                    shares: parseInt(post.querySelector('.post-shares') && post.querySelector('.post-shares').value) || 0,
-                    newFollowers: parseInt(post.querySelector('.post-new-followers') && post.querySelector('.post-new-followers').value) || 0,
-                    notes: post.querySelector('.post-notes') && post.querySelector('.post-notes').value || '',
-                    createdAt: post.dataset.createdAt || new Date().toISOString() // Preserve original creation date if it exists
+                    description: descEl ? descEl.value : '',
+                    type: typeEl ? typeEl.value : '',
+                    views: viewsEl ? (parseInt(viewsEl.value) || 0) : 0,
+                    likes: likesEl ? (parseInt(likesEl.value) || 0) : 0,
+                    comments: commentsEl ? (parseInt(commentsEl.value) || 0) : 0,
+                    saves: savesEl ? (parseInt(savesEl.value) || 0) : 0,
+                    shares: sharesEl ? (parseInt(sharesEl.value) || 0) : 0,
+                    newFollowers: followersEl ? (parseInt(followersEl.value) || 0) : 0,
+                    notes: notesEl ? notesEl.value : '',
+                    createdAt: post.dataset.createdAt || new Date().toISOString()
                 });
             });
 
@@ -1409,13 +1415,12 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
         function populateFormWithData(rangeData) {
             console.log('Populating form with data:', rangeData);
 
-            clearAllPlatformPosts(); // Clear existing temporary posts first
+            clearAllPlatformPosts();
 
             if (rangeData.postCounter) {
                 postCounter = rangeData.postCounter;
             }
 
-            // Ensure date pickers are updated correctly
             document.getElementById('startDatePicker').value = rangeData.startDate || '';
             document.getElementById('endDatePicker').value = rangeData.endDate || '';
 
@@ -1424,9 +1429,8 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             platforms.forEach(platform => {
                 const container = document.getElementById(platform + '-posts');
                 if (container && rangeData.platforms && rangeData.platforms[platform] && rangeData.platforms[platform].posts) {
-                    // Sort posts by their `createdAt` property or a numeric ID if available
                     const sortedPosts = [...rangeData.platforms[platform].posts].sort((a, b) => {
-                        const dateA = new Date(a.createdAt || 0); // Use a default date if not present
+                        const dateA = new Date(a.createdAt || 0);
                         const dateB = new Date(b.createdAt || 0);
                         return dateA - dateB;
                     });
@@ -1439,8 +1443,8 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                     }
 
                     sortedPosts.forEach(postData => {
-                        const postId = postData.id || ++postCounter; // Ensure unique ID
-                        if (postId > postCounter) { // Keep track of the highest post ID
+                        const postId = postData.id || ++postCounter;
+                        if (postId > postCounter) {
                             postCounter = postId;
                         }
 
@@ -1448,12 +1452,11 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                         postDiv.className = 'post-entry';
                         postDiv.dataset.postId = postId;
                         postDiv.dataset.platform = platform;
-                        postDiv.dataset.createdAt = postData.createdAt || new Date().toISOString(); // Store creation date
+                        postDiv.dataset.createdAt = postData.createdAt || new Date().toISOString();
                         postDiv.innerHTML = createPostHTML(postId, platform, postData, false);
 
                         container.appendChild(postDiv);
 
-                        // Use setTimeout to ensure elements are rendered before calculations
                         setTimeout(() => {
                             const viewsEl = postDiv.querySelector('.post-views');
                             if (viewsEl) calculateEngagement(viewsEl);
@@ -1462,7 +1465,6 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                         }, 0);
                     });
 
-                    // Append Add button and Summary *after* all posts for this platform
                     const addButton = document.createElement('div');
                     addButton.className = 'add-post-button';
                     addButton.innerHTML = '<button data-platform="' + platform + '" class="add-post-btn" style="background: #38a169; margin: 20px 0;">+ Add Another Post</button>';
@@ -1473,7 +1475,7 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                     summary.innerHTML = '<div style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px;"><h4>' + getPlatformIcon(platform) + ' Summary</h4><div id="' + platform + '-summary">Add posts to see summary</div></div>';
                     container.appendChild(summary);
 
-                    updatePlatformSummary(platform); // Update summary for this platform
+                    updatePlatformSummary(platform);
                 }
             });
 
@@ -1493,8 +1495,8 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                 }
                 updateTimeAnalysis();
             }
-            updateOverallSummary(); // Ensure overall summary is updated after all platforms
-            setupPlatformContentListeners(); // Re-attach event listeners for newly created elements
+            updateOverallSummary();
+            setupPlatformContentListeners();
         }
 
         // Date range functions
@@ -1507,12 +1509,11 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             if (!endDate) {
                 const start = new Date(startDate);
                 const end = new Date(start);
-                end.setDate(start.getDate() + 6); // Default to a week range
+                end.setDate(start.getDate() + 6);
                 document.getElementById('endDatePicker').value = end.toISOString().split('T')[0];
-            } else if (new Date(startDate) > new Date(endDate)) { // ensure start date <= end date
+            } else if (new Date(startDate) > new Date(endDate)) {
                 document.getElementById('endDatePicker').value = startDate;
             }
-
 
             if (currentUser && !initializationError) {
                 loadUserData();
@@ -1522,7 +1523,7 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
         function setThisWeek() {
             const today = new Date();
             const monday = new Date(today);
-            monday.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1)); // Handle Sunday as 0
+            monday.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
 
             const sunday = new Date(monday);
             sunday.setDate(monday.getDate() + 6);
@@ -1536,7 +1537,7 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
         function setLastWeek() {
             const today = new Date();
             const lastMonday = new Date(today);
-            lastMonday.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1) - 7); // Last Monday
+            lastMonday.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1) - 7);
 
             const lastSunday = new Date(lastMonday);
             lastSunday.setDate(lastMonday.getDate() + 6);
@@ -1583,7 +1584,6 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             platforms.forEach(platform => {
                 const platformDiv = document.createElement('div');
                 platformDiv.className = 'platform-section';
-                // Note: Removed inline onclick for togglePlatform here. Will attach via JS.
                 platformDiv.innerHTML = `
                     <div class="platform-header" data-platform-id="${platform.id}">
                         <span>${platform.name}</span><span class="expand-icon">▼</span>
@@ -1596,7 +1596,7 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                     </div>`;
                 container.appendChild(platformDiv);
             });
-            setupPlatformContentListeners(); // Attach listeners after creating platforms
+            setupPlatformContentListeners();
         }
 
         function togglePlatform(platformId) {
@@ -1624,31 +1624,28 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
         }
 
         function addPost(platform) {
-            // Check if there's an active editing post; if so, prevent adding a new one or warn
             if (editingPostId !== null) {
                 alert('Please save or cancel the currently editing post before adding a new one.');
                 return;
             }
 
-            postCounter++; // Increment before using for new post
-            const newPostId = postCounter; // Assign fresh ID
+            postCounter++;
+            const newPostId = postCounter;
             const container = document.getElementById(platform + '-posts');
 
-            // Find existing header or create a new one if it's the first post for this platform
             let headerDiv = container.querySelector('.post-header');
             if (!headerDiv) {
                 headerDiv = document.createElement('div');
                 headerDiv.className = 'post-header';
                 headerDiv.innerHTML = '<div>Description</div><div>Type</div><div>Views</div><div>Likes</div><div>Comments</div><div>Saves</div><div>Shares</div><div>New Followers</div><div>Engagement</div><div>Notes</div><div>Actions</div>';
-                container.prepend(headerDiv); // Prepend so it's at the top of the posts list
+                container.prepend(headerDiv);
             }
-
 
             const postDiv = document.createElement('div');
             postDiv.className = 'post-entry editing';
             postDiv.dataset.postId = newPostId;
             postDiv.dataset.platform = platform;
-            postDiv.dataset.createdAt = new Date().toISOString(); // Store creation date
+            postDiv.dataset.createdAt = new Date().toISOString();
 
             const defaultData = {
                 description: '',
@@ -1662,13 +1659,11 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                 notes: ''
             };
 
-            // Set the new post as the currently editing one
             editingPostId = newPostId;
-            originalPostData[newPostId] = { ...defaultData, id: newPostId, platform: platform }; // Store default or empty state
+            originalPostData[newPostId] = { ...defaultData, id: newPostId, platform: platform };
 
             postDiv.innerHTML = createPostHTML(newPostId, platform, defaultData, true);
 
-            // Find and ensure the add button and summary are at the bottom
             let addButton = container.querySelector('.add-post-button');
             let summary = container.querySelector('.platform-summary-section');
 
@@ -1683,7 +1678,6 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                 summary.innerHTML = `<div style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px;"><h4>${getPlatformIcon(platform)} Summary</h4><div id="${platform}-summary">Add posts to see summary</div></div>`;
             }
 
-            // Remove existing instances before re-appending to ensure order
             container.querySelectorAll('.add-post-button, .platform-summary-section').forEach(el => el.remove());
 
             container.appendChild(postDiv);
@@ -1691,7 +1685,7 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             container.appendChild(summary);
 
             updatePlatformSummary(platform);
-            setupPostEntryListeners(postDiv); // Attach listeners to the new post elements
+            setupPostEntryListeners(postDiv);
         }
 
         function getPlatformIcon(platform) {
@@ -1718,7 +1712,6 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             else if (newFollowersValue == 0) followersClass += ' zero';
             else if (newFollowersValue < 0) followersClass += ' negative';
 
-            // Use data attributes for events rather than inline handlers
             return `
                 <div class="post-grid">
                     <input type="text" placeholder="Post description" class="post-description" value="${(data.description || '').replace(/"/g, '&quot;')}" ${!isEditing ? 'readonly' : ''}>
@@ -1746,8 +1739,6 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                 </div>`;
         }
 
-
-        // FIXED: Safe edit/cancel system that preserves data
         function editPost(postId) {
             console.log('Editing post:', postId);
 
@@ -1762,10 +1753,8 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                 return;
             }
 
-            // Get the platform from the postDiv's dataset
             const platform = postDiv.dataset.platform;
 
-            // Collect current data from the *displayed* non-editable fields (before re-render)
             const currentData = {
                 description: postDiv.querySelector('.post-description').value,
                 type: postDiv.querySelector('.post-type').value,
@@ -1778,14 +1767,12 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                 notes: postDiv.querySelector('.post-notes').value
             };
 
-            // Store the original data for potential cancellation
             originalPostData[postId] = { ...currentData };
 
             editingPostId = postId;
             postDiv.classList.add('editing');
             postDiv.innerHTML = createPostHTML(postId, platform, currentData, true);
 
-            // Re-attach input event listeners to the editable fields
             setupPostEntryListeners(postDiv);
 
             setTimeout(() => {
@@ -1807,7 +1794,6 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
 
             const platform = postDiv.dataset.platform;
 
-            // Collect current (potentially edited) data from the input fields
             const currentData = {
                 description: postDiv.querySelector('.post-description').value,
                 type: postDiv.querySelector('.post-type').value,
@@ -1818,7 +1804,7 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                 shares: postDiv.querySelector('.post-shares').value,
                 newFollowers: postDiv.querySelector('.post-new-followers').value,
                 notes: postDiv.querySelector('.post-notes').value,
-                createdAt: postDiv.dataset.createdAt // Preserve creation date
+                createdAt: postDiv.dataset.createdAt
             };
 
             console.log('Saving collected data:', currentData);
@@ -1826,10 +1812,8 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             editingPostId = null;
             postDiv.classList.remove('editing');
 
-            // Re-render to read-only view
             postDiv.innerHTML = createPostHTML(postId, platform, currentData, false);
 
-            // Clear stored original data
             delete originalPostData[postId];
 
             setTimeout(() => {
@@ -1839,9 +1823,8 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                 if (followersEl) updateFollowersDisplay(followersEl);
                 updatePlatformSummary(platform);
                 updateOverallSummary();
-            }, 0); // Use 0 timeout to allow DOM update first
+            }, 0);
 
-            // Save to database
             if (currentUser && !initializationError) {
                 try {
                     await saveData();
@@ -1860,17 +1843,14 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
 
             const platform = postDiv.dataset.platform;
 
-            // If this post has stored original data, restore it
             if (originalPostData[postId]) {
                 editingPostId = null;
                 postDiv.classList.remove('editing');
 
-                // Restore the original data
                 const originalData = originalPostData[postId];
-                originalData.createdAt = postDiv.dataset.createdAt; // Ensure creation date is preserved
+                originalData.createdAt = postDiv.dataset.createdAt;
                 postDiv.innerHTML = createPostHTML(postId, platform, originalData, false);
 
-                // Clear stored data
                 delete originalPostData[postId];
 
                 setTimeout(() => {
@@ -1882,10 +1862,9 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                     updateOverallSummary();
                 }, 0);
             } else {
-                // This is a new post that was created in editing mode - remove it
-                removePost(postId); // Pass postId directly
+                removePost(postId);
             }
-            editingPostId = null; // Ensure editingPostId is reset
+            editingPostId = null;
         }
 
         function removePost(postId) {
@@ -1900,17 +1879,13 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                 editingPostId = null;
             }
 
-            // Clear any stored original data
             delete originalPostData[postId];
 
-            // Remove the post entry
             postEntry.remove();
 
-            // Check if there are any other post entries for this platform
             const container = document.getElementById(platform + '-posts');
             const remainingPosts = container.querySelectorAll('.post-entry');
 
-            // If no posts are left, remove the header, add button, and summary
             if (remainingPosts.length === 0) {
                 const headerDiv = container.querySelector('.post-header');
                 if (headerDiv) headerDiv.remove();
@@ -1934,18 +1909,33 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             }
         }
 
+        // FIXED: Engagement rate calculation with better error handling
         function calculateEngagement(element) {
             const postEntry = element.closest('.post-entry');
-            if (!postEntry) return;
+            if (!postEntry) {
+                console.log('No post entry found for engagement calculation');
+                return;
+            }
 
-            const views = parseFloat(postEntry.querySelector('.post-views').value) || 0;
-            const likes = parseFloat(postEntry.querySelector('.post-likes').value) || 0;
-            const comments = parseFloat(postEntry.querySelector('.post-comments').value) || 0;
-            const saves = parseFloat(postEntry.querySelector('.post-saves').value) || 0;
-            const shares = parseFloat(postEntry.querySelector('.post-shares').value) || 0;
-
+            const viewsEl = postEntry.querySelector('.post-views');
+            const likesEl = postEntry.querySelector('.post-likes');
+            const commentsEl = postEntry.querySelector('.post-comments');
+            const savesEl = postEntry.querySelector('.post-saves');
+            const sharesEl = postEntry.querySelector('.post-shares');
             const rateElement = postEntry.querySelector('.engagement-rate');
-            if (!rateElement) return;
+
+            if (!viewsEl || !likesEl || !commentsEl || !savesEl || !sharesEl || !rateElement) {
+                console.log('Missing required elements for engagement calculation');
+                return;
+            }
+
+            const views = parseFloat(viewsEl.value) || 0;
+            const likes = parseFloat(likesEl.value) || 0;
+            const comments = parseFloat(commentsEl.value) || 0;
+            const saves = parseFloat(savesEl.value) || 0;
+            const shares = parseFloat(sharesEl.value) || 0;
+
+            console.log('Calculating engagement:', { views, likes, comments, saves, shares });
 
             if (views > 0) {
                 const totalEngagement = likes + comments + saves + shares;
@@ -1953,7 +1943,10 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
 
                 rateElement.textContent = engagementRate.toFixed(2) + '%';
 
-                rateElement.className = 'engagement-rate '; // Reset class
+                // Reset all rate classes
+                rateElement.className = 'engagement-rate';
+                
+                // Add appropriate rate class
                 if (engagementRate >= 6) {
                     rateElement.classList.add('rate-excellent');
                 } else if (engagementRate >= 4) {
@@ -1963,9 +1956,11 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                 } else {
                     rateElement.classList.add('rate-poor');
                 }
+
+                console.log('Engagement rate calculated:', engagementRate.toFixed(2) + '%');
             } else {
                 rateElement.textContent = '0%';
-                rateElement.className = 'engagement-rate'; // No specific rate class if views are 0
+                rateElement.className = 'engagement-rate';
             }
 
             const platform = postEntry.dataset.platform;
@@ -1986,9 +1981,9 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             let totalViews = 0;
             let totalNewFollowers = 0;
             let engagementRates = [];
-            let bestPost = { rate: -1, description: '' }; // Initialize with -1 to properly find best 0
+            let bestPost = { rate: -1, description: '' };
             let worstPost = { rate: Infinity, description: '' };
-            let bestFollowerPost = { followers: -Infinity, description: '' }; // Use -Infinity to correctly find best
+            let bestFollowerPost = { followers: -Infinity, description: '' };
 
             posts.forEach(post => {
                 const views = parseFloat(post.querySelector('.post-views').value) || 0;
@@ -2009,7 +2004,7 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                     bestPost = { rate, description };
                 }
 
-                if (rate < worstPost.rate) { // Use correct comparison for worstPost
+                if (rate < worstPost.rate) {
                     worstPost = { rate, description };
                 }
 
@@ -2024,21 +2019,20 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
 
             let summaryHTML = '<strong>Posts:</strong> ' + totalPosts + '<br><strong>Total Views:</strong> ' + totalViews.toLocaleString() + '<br><strong>Total New Followers:</strong> <span class="new-followers ' + (totalNewFollowers > 0 ? 'positive' : totalNewFollowers < 0 ? 'negative' : 'zero') + '">' + (totalNewFollowers > 0 ? '+' : '') + totalNewFollowers + '</span><br><strong>Average Engagement Rate:</strong> ' + avgEngagement.toFixed(2) + '%<br>';
 
-            if (bestPost.rate >= 0) { // Check if a valid best post was found
+            if (bestPost.rate >= 0) {
                 summaryHTML += '<strong>Best Post:</strong> ' + bestPost.description + ' (' + bestPost.rate.toFixed(2) + '%)<br>';
             }
 
-            if (totalPosts > 1 && worstPost.rate !== Infinity && worstPost.rate !== bestPost.rate) { // Ensure worstPost is not default Infinity and different from best
+            if (totalPosts > 1 && worstPost.rate !== Infinity && worstPost.rate !== bestPost.rate) {
                 summaryHTML += '<strong>Worst Post:</strong> ' + worstPost.description + ' (' + worstPost.rate.toFixed(2) + '%)<br>';
             }
 
-            if (bestFollowerPost.followers > -Infinity) { // Check if a valid best follower post was found
+            if (bestFollowerPost.followers > -Infinity) {
                 summaryHTML += '<strong>Best for Followers:</strong> ' + bestFollowerPost.description + ' (' + (bestFollowerPost.followers > 0 ? '+' : '') + bestFollowerPost.followers + ')<br>';
             }
 
             summaryElement.innerHTML = summaryHTML;
         }
-
 
         function updateOverallSummary() {
             const summaryGrid = document.getElementById('summaryGrid');
@@ -2131,7 +2125,6 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
 
             document.getElementById('timeAnalysis').innerHTML = analysis;
 
-            // Trigger save after updating analysis
             if (currentUser && !initializationError) {
                 saveData();
             }
@@ -2144,9 +2137,9 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.download = 'social-media-report-' + rangeData.startDate + '.txt';
-            document.body.appendChild(link); // Append to body to make it clickable
+            document.body.appendChild(link);
             link.click();
-            document.body.removeChild(link); // Clean up
+            document.body.removeChild(link);
 
             alert('Report generated and downloaded!');
         }
@@ -2209,9 +2202,9 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             const link = document.createElement('a');
             link.href = URL.createObjectURL(dataBlob);
             link.download = 'social-media-data-' + rangeData.startDate + '.json';
-            document.body.appendChild(link); // Append to body to make it clickable
+            document.body.appendChild(link);
             link.click();
-            document.body.removeChild(link); // Clean up
+            document.body.removeChild(link);
         }
 
         function processBulkData() {
@@ -2251,7 +2244,6 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             reader.readAsText(file);
         }
 
-        // Helper for mapping platform names for display
         const platformDisplayNames = {
             'instagram': 'Instagram', 'facebook': 'Facebook', 'threads': 'Threads', 'tiktok': 'TikTok', 'pinterest': 'Pinterest'
         };
@@ -2260,27 +2252,25 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             const lines = csvData.split('\n');
             let headerProcessed = false;
             let addedCount = 0;
-            const newPostsToAdd = []; // Array to store all posts to add
+            const newPostsToAdd = [];
 
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line) continue;
 
                 if (!headerProcessed) {
-                    // Simple check if the first line looks like a header
                     if (line.toLowerCase().includes('platform') && line.toLowerCase().includes('post type')) {
                         headerProcessed = true;
                         continue;
                     }
-                    headerProcessed = true; // Assume no header if not explicitly found, proceed with data
+                    headerProcessed = true;
                 }
 
                 const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
-                // Expected format: Platform, Post Type, Views, Likes, Comments, Saves, Shares, New Followers, Description (optional), Engagement Rate (optional)
-                if (values.length < 8) continue; // Minimum required fields
+                if (values.length < 8) continue;
 
                 const platformRaw = values[0].toLowerCase().trim();
-                const platform = Object.keys(platformDisplayNames).find(key => platformRaw.includes(key)) || platformRaw; // Try to map to known platforms
+                const platform = Object.keys(platformDisplayNames).find(key => platformRaw.includes(key)) || platformRaw;
                 const postType = values[1].trim();
                 const views = parseInt(values[2]);
                 const likes = parseInt(values[3]);
@@ -2288,9 +2278,8 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                 const saves = parseInt(values[5]);
                 const shares = parseInt(values[6]);
                 const newFollowers = parseInt(values[7]);
-                const description = values[8] || postType; // Use Post Type as description if not provided
+                const description = values[8] || postType;
 
-                // Validate if it's a known platform
                 if (Object.keys(platformDisplayNames).includes(platform)) {
                     newPostsToAdd.push({
                         platform, postType, views, likes, comments, saves, shares, newFollowers, description
@@ -2300,13 +2289,11 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                 }
             }
 
-            // Process all valid posts
             newPostsToAdd.forEach(postData => {
                 const newId = ++postCounter;
                 const container = document.getElementById(postData.platform + '-posts');
-                if (!container) return; // Skip if platform container doesn't exist
+                if (!container) return;
 
-                // Add header if it's the first post for this platform
                 if (!container.querySelector('.post-header')) {
                     const headerDiv = document.createElement('div');
                     headerDiv.className = 'post-header';
@@ -2315,21 +2302,20 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                 }
 
                 const postDiv = document.createElement('div');
-                postDiv.className = 'post-entry'; // Start as non-editing
+                postDiv.className = 'post-entry';
                 postDiv.dataset.postId = newId;
                 postDiv.dataset.platform = postData.platform;
                 postDiv.dataset.createdAt = new Date().toISOString();
-                postDiv.innerHTML = createPostHTML(newId, postData.platform, postData, false); // Render as non-editable
+                postDiv.innerHTML = createPostHTML(newId, postData.platform, postData, false);
 
-                // Append just before the "Add Another Post" button or summary if they exist
                 const existingAddButton = container.querySelector('.add-post-button');
                 if (existingAddButton) {
                     existingAddButton.before(postDiv);
                 } else {
-                    container.appendChild(postDiv); // Append if no button exists yet
+                    container.appendChild(postDiv);
                 }
 
-                setupPostEntryListeners(postDiv); // Attach listeners
+                setupPostEntryListeners(postDiv);
 
                 setTimeout(() => {
                     const viewsEl = postDiv.querySelector('.post-views');
@@ -2342,10 +2328,9 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             });
 
             if (newPostsToAdd.length > 0) {
-                // Ensure Add Button and Summary are up-to-date and at the bottom after all adds
                 Object.keys(platformDisplayNames).forEach(platformKey => {
                     const container = document.getElementById(platformKey + '-posts');
-                    if (container && container.querySelector('.post-entry')) { // Only if there are posts
+                    if (container && container.querySelector('.post-entry')) {
                         let addButton = container.querySelector('.add-post-button');
                         if (!addButton) {
                             addButton = document.createElement('div');
@@ -2362,11 +2347,11 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                             container.appendChild(summary);
                         }
                         updatePlatformSummary(platformKey);
-                        setupPostEntryListeners(addButton.querySelector('button')); // Reattach listener to add button
+                        setupPostEntryListeners(addButton.querySelector('button'));
                     }
                 });
 
-                updateOverallSummary(); // Update overall summary once all adds are done
+                updateOverallSummary();
 
                 if (currentUser && !initializationError) {
                     saveData().then(() => {
@@ -2374,7 +2359,6 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                         alert(`✅ Successfully imported ${addedCount} posts from ${source === 'upload' ? 'file' : 'pasted data'}!`);
                     }).catch((error) => {
                         console.error('Save error:', error);
-                        // Even if save to cloud fails, data is locally present.
                         alert(`✅ Successfully imported ${addedCount} posts! (Note: Cloud save failed - data exists locally)`);
                     });
                 } else {
@@ -2391,8 +2375,6 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             }
         }
 
-
-        // AI Screenshot Analysis functions would go here (same as before)
         async function callOpenAIVision(base64Image) {
             if (!userApiKey) {
                 throw new Error('No API key provided');
@@ -2473,12 +2455,10 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                 switchEntryMethod('dashboard');
             }
 
-            // Manually add the post, then populate its fields
             addPost(platform);
 
             const container = document.getElementById(platform + '-posts');
-            // Select the most recently added post (which will be the one just created by addPost)
-            const lastPost = container.querySelector(`[data-post-id="${editingPostId}"]`); // Using editingPostId as it points to the newly created one
+            const lastPost = container.querySelector(`[data-post-id="${editingPostId}"]`);
 
             if (lastPost && extractedData) {
                 lastPost.querySelector('.post-description').value = extractedData.description || 'AI extracted post';
@@ -2497,7 +2477,7 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                             break;
                         }
                     }
-                    if (typeSelect.value === '') { // Fallback if no specific type matched but was set by AI
+                    if (typeSelect.value === '') {
                         typeSelect.value = 'Other';
                     }
                 }
@@ -2509,7 +2489,6 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                 lastPost.querySelector('.post-shares').value = extractedData.shares || '';
                 lastPost.querySelector('.post-new-followers').value = extractedData.newFollowers || '';
 
-                // Trigger engagement calculation and follower display update
                 const viewsInput = lastPost.querySelector('.post-views');
                 if (viewsInput) {
                      calculateEngagement(viewsInput);
@@ -2519,8 +2498,7 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                     updateFollowersDisplay(followersInput);
                 }
 
-                // Save the new post after populating details
-                savePost(editingPostId); // Use editingPostId here as it's the id of the post just added
+                savePost(editingPostId);
 
                 alert('✅ Data added to ' + platformDisplayNames[platform] + ' dashboard and saved!');
 
@@ -2554,7 +2532,6 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                 </div>`;
             resultsContainer.appendChild(resultDiv);
 
-            // Attach listener to the newly created 'Add to Dashboard' button
             resultDiv.querySelector(`.add-to-dashboard-ai-btn[data-index="${index}"]`).addEventListener('click', (event) => {
                 addExtractedDataToTracker(event.target, index);
             });
@@ -2587,12 +2564,10 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                     const platformSelect = document.getElementById('platform-' + index);
                     if (platformSelect && extractedData.data.platform) {
                         const aiPlatform = extractedData.data.platform.toLowerCase();
-                        // Check if the AI-identified platform is one of our options
                         const optionExists = Array.from(platformSelect.options).some(option => option.value === aiPlatform);
                         if (optionExists) {
                             platformSelect.value = aiPlatform;
                         } else {
-                            // Default to Instagram if AI platform is not recognized
                             platformSelect.value = 'instagram';
                         }
                     }
@@ -2631,9 +2606,9 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             const isValid = apiKey.startsWith('sk-') && apiKey.length > 20;
 
             saveBtn.disabled = !isValid;
-            clearBtn.disabled = !(userApiKey || apiKey); // Enable clear if there's a stored key OR a new key typed
+            clearBtn.disabled = !(userApiKey || apiKey);
 
-            if (isValid && !userApiKey) { // Only set userApiKey if it's the first time and valid
+            if (isValid && !userApiKey) {
                 userApiKey = apiKey;
                 document.getElementById('apiKeyStatus').classList.remove('hidden');
                 document.getElementById('uploadSection').classList.remove('hidden');
@@ -2682,7 +2657,7 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             const apiKeyInput = document.getElementById('openaiApiKey');
             apiKeyInput.value = '';
             apiKeyInput.placeholder = 'sk-proj-...';
-            apiKeyInput.setAttribute('type', 'password'); // show as password again
+            apiKeyInput.setAttribute('type', 'password');
             apiKeyInput.style.backgroundColor = '';
             apiKeyInput.style.borderColor = '';
 
@@ -2699,23 +2674,22 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             const saveBtn = document.getElementById('saveApiKeyBtn');
             const clearBtn = document.getElementById('clearApiKeyBtn');
 
-
             if (userApiKey) {
                 document.getElementById('apiKeyStatus').classList.remove('hidden');
                 document.getElementById('uploadSection').classList.remove('hidden');
                 clearBtn.disabled = false;
-                saveBtn.disabled = true; // Key is already set (and valid)
+                saveBtn.disabled = true;
 
                 apiKeyInput.placeholder = 'API Key saved ✅';
-                apiKeyInput.value = ''; // Ensure field is empty but placeholder indicates saved
-                apiKeyInput.setAttribute('type', 'text'); // Temporarily show it's not a password input
+                apiKeyInput.value = '';
+                apiKeyInput.setAttribute('type', 'text');
                 apiKeyInput.style.backgroundColor = '#f0fff4';
                 apiKeyInput.style.borderColor = '#48bb78';
             } else {
                 document.getElementById('apiKeyStatus').classList.add('hidden');
                 document.getElementById('uploadSection').classList.add('hidden');
-                saveBtn.disabled = true; // No key, so can't save until something is typed
-                clearBtn.disabled = true; // No key to clear
+                saveBtn.disabled = true;
+                clearBtn.disabled = true;
 
                 apiKeyInput.value = '';
                 apiKeyInput.placeholder = 'sk-proj-...';
@@ -2736,13 +2710,13 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
 
             if (files.length === 0) return;
 
-            resultsContainer.innerHTML = '<h3>Analyzing Screenshots...</h3>'; // Clear previous results
+            resultsContainer.innerHTML = '<h3>Analyzing Screenshots...</h3>';
 
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
                 await analyzeScreenshot(file, i);
             }
-            event.target.value = null; // Clear the input so same file can be selected again
+            event.target.value = null;
         }
 
         // Account Management Functions
@@ -2752,9 +2726,9 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                 currentAccountId = selectedAccountId;
                 updateCurrentAccountDisplay();
                 applyAccountTheme();
-                loadUserData(); // Reload data for the new account
+                loadUserData();
                 if (currentUser && !initializationError) {
-                    saveUserAccounts(); // Save currentAccountId preference
+                    saveUserAccounts();
                 }
             }
         }
@@ -2765,7 +2739,6 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                 document.getElementById('currentAccountName').textContent = account.name;
                 document.getElementById('currentAccountDescription').textContent = account.description || '';
             } else {
-                // Fallback for missing account (e.g., if deleted)
                 currentAccountId = 'default';
                 updateCurrentAccountDisplay();
             }
@@ -2773,7 +2746,7 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
 
         function applyAccountTheme() {
             const account = userAccounts[currentAccountId];
-            const color = account ? (account.color || '#667eea') : '#667eea'; // Default if account is null/undefined
+            const color = account ? (account.color || '#667eea') : '#667eea';
 
             const lighterColor = lightenColor(color, 0.9);
             const darkerColor = darkenColor(color, 0.1);
@@ -2867,11 +2840,11 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                     createdAt: new Date().toISOString()
                 };
 
-                currentAccountId = accountId; // Automatically switch to the newly created account
+                currentAccountId = accountId;
             }
 
             populateAccountsDropdown();
-            updateCurrentAccountDisplay(); // Update display for the newly active account
+            updateCurrentAccountDisplay();
             applyAccountTheme();
 
             if (currentUser && !initializationError) {
@@ -2880,7 +2853,7 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
 
             closeAccountModal();
             alert(editingAccountId ? 'Account updated successfully!' : 'Account created successfully!');
-            loadUserData(); // Reload data for the switched/updated account
+            loadUserData();
         }
 
         function editAccount(accountId) {
@@ -2912,28 +2885,26 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             }
 
             if (currentAccountId === accountId) {
-                currentAccountId = 'default'; // Switch to default if current account is deleted
+                currentAccountId = 'default';
                 updateCurrentAccountDisplay();
                 applyAccountTheme();
             }
 
-            delete userAccounts[accountId]; // Remove from local userAccounts object
+            delete userAccounts[accountId];
 
             populateAccountsDropdown();
             populateAccountsList();
 
             if (currentUser && !initializationError) {
                 try {
-                    // Delete all date ranges (data) under this account
                     const dateRangesRef = collection(db, 'users', currentUser.uid, 'accounts', accountId, 'dateRanges');
                     const snapshot = await getDocs(dateRangesRef);
                     const deleteDataPromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
                     await Promise.all(deleteDataPromises);
 
-                    // Delete the account metadata itself
                     await deleteDoc(doc(db, 'users', currentUser.uid, 'accounts', accountId));
 
-                    await saveUserAccounts(); // Save the updated list of accounts
+                    await saveUserAccounts();
                 } catch (error) {
                     console.error('Error deleting account data from Firebase:', error);
                     alert('Error deleting account data from cloud. Please try again.');
@@ -2941,14 +2912,13 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             }
 
             alert('Account deleted successfully');
-            loadUserData(); // Reload data for the new current account (default)
+            loadUserData();
         }
 
         function populateAccountsDropdown() {
             const dropdown = document.getElementById('currentAccountSelect');
             dropdown.innerHTML = '';
 
-            // Ensure 'default' account exists if it was somehow removed or not initialized properly
             if (!userAccounts['default']) {
                 userAccounts['default'] = {
                     id: 'default',
@@ -2959,13 +2929,11 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                 };
             }
 
-            // Convert and sort accounts (e.g., by creation date or name to maintain consistency)
             const sortedAccounts = Object.values(userAccounts).sort((a, b) => {
-                if (a.id === 'default') return -1; // Default account always first
+                if (a.id === 'default') return -1;
                 if (b.id === 'default') return 1;
                 return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
             });
-
 
             sortedAccounts.forEach(account => {
                 const option = document.createElement('option');
@@ -3005,27 +2973,25 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                     </div>`;
                 container.appendChild(accountDiv);
             });
-             setupManageAccountModalListeners(container); // Attach listeners to newly created buttons
+             setupManageAccountModalListeners(container);
         }
 
         async function saveUserAccounts() {
             if (!currentUser || initializationError) return;
 
             try {
-                // The main accounts document storing all metadata for a user's accounts
                 const settingsDocRef = doc(db, 'users', currentUser.uid, 'settings', 'accounts');
 
-                // Prepare userAccounts object for saving (Firebase can't save functions, etc.)
                 const accountsToSave = {};
                 for (const id in userAccounts) {
-                    accountsToSave[id] = { ...userAccounts[id] }; // Copy to avoid issues with direct modification
+                    accountsToSave[id] = { ...userAccounts[id] };
                 }
 
                 await setDoc(settingsDocRef, {
                     accounts: accountsToSave,
                     currentAccountId: currentAccountId,
                     lastUpdated: new Date().toISOString()
-                }, { merge: true }); // Use merge to avoid overwriting other settings if they exist
+                }, { merge: true });
 
             } catch (error) {
                 console.error('Error saving accounts to Firebase:', error);
@@ -3044,7 +3010,6 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                     const data = accountsSnap.data();
                     if (data.accounts) {
                         userAccounts = data.accounts;
-                        // Ensure each loaded account has a createdAt property if it's missing (for sorting)
                         for (const accountId in userAccounts) {
                             if (!userAccounts[accountId].createdAt) {
                                 userAccounts[accountId].createdAt = new Date().toISOString();
@@ -3054,7 +3019,6 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                     currentAccountId = data.currentAccountId || 'default';
                 }
 
-                // Always ensure default account exists
                 if (!userAccounts['default']) {
                     userAccounts['default'] = {
                         id: 'default',
@@ -3074,13 +3038,10 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             }
         }
 
-        // --- Event Listener Setup ---
         function setupEventListeners() {
-            // Authentication
             document.getElementById('signInBtn').addEventListener('click', signInWithGoogle);
             document.getElementById('signOutBtn').addEventListener('click', signOut);
 
-            // Date Range
             document.getElementById('startDatePicker').addEventListener('change', updateDateRange);
             document.getElementById('endDatePicker').addEventListener('change', updateDateRange);
             document.getElementById('thisWeekBtn').addEventListener('click', setThisWeek);
@@ -3088,38 +3049,31 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             document.getElementById('generateReportBtn').addEventListener('click', generateReport);
             document.getElementById('exportDataBtn').addEventListener('click', exportData);
 
-             // Account Management
             document.getElementById('currentAccountSelect').addEventListener('change', switchAccount);
             document.getElementById('addNewAccountBtn').addEventListener('click', showCreateAccountModal);
             document.getElementById('manageAccountsBtn').addEventListener('click', showManageAccountsModal);
 
-            // Entry Method Selection
             document.querySelectorAll('.entry-method').forEach(button => {
                 button.addEventListener('click', () => switchEntryMethod(button.dataset.method));
             });
 
-            // Bulk CSV Method Selection
             document.querySelectorAll('.csv-method').forEach(button => {
                 button.addEventListener('click', () => switchCSVMethod(button.dataset.csvMethod));
             });
             document.getElementById('processBulkDataBtn').addEventListener('click', processBulkData);
             document.getElementById('processCSVFileBtn').addEventListener('click', processCSVFile);
 
-            // AI Screenshot Analysis
             document.getElementById('openaiApiKey').addEventListener('input', validateApiKey);
             document.getElementById('saveApiKeyBtn').addEventListener('click', saveApiKey);
             document.getElementById('clearApiKeyBtn').addEventListener('click', clearApiKey);
-            document.querySelector('.file-drop-zone').addEventListener('click', () => document.getElementById('screenshotInput').click()); // For drop zone visual cue
+            document.querySelector('.file-drop-zone').addEventListener('click', () => document.getElementById('screenshotInput').click());
             document.getElementById('screenshotInput').addEventListener('change', analyzeScreenshots);
 
-
-            // Time Investment Inputs - using input event for immediate response
             document.getElementById('time-creation')?.addEventListener('input', updateTimeAnalysisAndSave);
             document.getElementById('time-management')?.addEventListener('input', updateTimeAnalysisAndSave);
             document.getElementById('time-engagement')?.addEventListener('input', updateTimeAnalysisAndSave);
             document.getElementById('time-analytics')?.addEventListener('input', updateTimeAnalysisAndSave);
 
-            // Modals
             document.getElementById('closeAccountModalBtn').addEventListener('click', closeAccountModal);
             document.getElementById('cancelAccountModalBtn').addEventListener('click', closeAccountModal);
             document.getElementById('saveAccountBtn').addEventListener('click', saveAccount);
@@ -3127,20 +3081,16 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             document.getElementById('closeManageModalFooterBtn').addEventListener('click', closeManageModal);
         }
 
-        // Helper to debounce or combine updateTimeAnalysis and saveData, if needed
         let saveTimeout;
         function updateTimeAnalysisAndSave() {
             clearTimeout(saveTimeout);
             saveTimeout = setTimeout(() => {
                 updateTimeAnalysis();
-            }, 500); // Debounce by 500ms
+            }, 500);
         }
 
-
-        // Setup listeners for dynamically created platform content
         function setupPlatformContentListeners() {
             document.querySelectorAll('.platform-header').forEach(header => {
-                // Ensure existing listeners are removed to prevent duplicates
                 header.removeEventListener('click', handlePlatformHeaderClick);
                 header.addEventListener('click', handlePlatformHeaderClick);
             });
@@ -3160,19 +3110,14 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             addPost(platform);
         }
 
-
-        // Setup listeners for dynamically created posts
         function setupPostEntryListeners(postElement = document) {
-            // Event delegation for post-related actions (edit, save, cancel, remove, input changes)
             postElement.querySelectorAll('.post-entry').forEach(entry => {
-                // Input fields inside the post entry
                 const inputs = entry.querySelectorAll('input[type="text"], input[type="number"], select');
                 inputs.forEach(input => {
-                    input.removeEventListener('change', handlePostInputChange); // Remove old to prevent duplicates
-                    input.addEventListener('change', handlePostInputChange);
+                    input.removeEventListener('input', handlePostInputChange);
+                    input.addEventListener('input', handlePostInputChange);
                 });
 
-                // Action buttons
                 const editBtn = entry.querySelector('.edit-btn');
                 if (editBtn) {
                      editBtn.removeEventListener('click', handleEditPostClick);
@@ -3195,21 +3140,18 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                  }
             });
 
-            // For the add-post-button specifically inside platform-posts container generated after loadUserData
             postElement.querySelectorAll('.add-post-btn').forEach(button => {
                 button.removeEventListener('click', handleAddPostButtonClick);
                 button.addEventListener('click', handleAddPostButtonClick);
             });
         }
 
-        // Event handlers for post actions
         function handlePostInputChange(event) {
              const postEntry = event.target.closest('.post-entry');
              if (postEntry) {
                  const viewsInput = postEntry.querySelector('.post-views');
                  const followersInput = postEntry.querySelector('.post-new-followers');
 
-                 // Re-calculate engagement if relevant input changes
                  if (event.target.classList.contains('post-views') ||
                      event.target.classList.contains('post-likes') ||
                      event.target.classList.contains('post-comments') ||
@@ -3217,7 +3159,6 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                      event.target.classList.contains('post-shares')) {
                      if (viewsInput) calculateEngagement(viewsInput);
                  }
-                 // Update follower display if new followers input changes
                  if (event.target.classList.contains('post-new-followers')) {
                      if (followersInput) updateFollowersDisplay(followersInput);
                  }
@@ -3241,13 +3182,11 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
 
         function handleRemovePostClick(event) {
              const postId = event.target.dataset.postId;
-             // Confirmation moved inside removePost for consistency
              if (confirm('Are you sure you want to remove this post?')) {
                  removePost(postId);
              }
         }
 
-        // Event listeners for account management modal buttons
         function setupManageAccountModalListeners(container) {
             container.querySelectorAll('.edit-account-btn').forEach(button => {
                 button.removeEventListener('click', handleEditAccountClick);
@@ -3269,14 +3208,12 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
             deleteAccount(accountId);
         }
 
-
-        // Initialize app on window load
         window.addEventListener('load', function() {
             console.log('Window loaded, initializing...');
 
-            setThisWeek(); // Set default to this week date range
-            initializePlatforms(); // Create initial platform sections dynamically
-            setupEventListeners(); // Attach all static event listeners
+            setThisWeek();
+            initializePlatforms();
+            setupEventListeners();
 
             if (!initializationError) {
                 try {
@@ -3285,7 +3222,7 @@ Facebook,Post,456,23,8,3,2,1,7.24%"></textarea>
                         if (user) {
                             currentUser = user;
                             showUserSection();
-                            loadUserData(); // Load data once user is authenticated
+                            loadUserData();
                         } else {
                             currentUser = null;
                             showAuthSection();
